@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - UAC Prix est Juste</title>
+<link rel="icon" href="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
+.logo img{height:32px;width:auto}
+.logo span{color:#c084fc}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:800px;margin:0 auto;padding:24px 16px}
+h1{font-size:22px;font-weight:900;margin-bottom:4px}
+h1 span{color:#c084fc}
+.sub{color:#888;font-size:13px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a}
+.card h2{font-size:15px;margin-bottom:12px;color:#c084fc}
+.card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+.card input,.card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:10px;font-family:inherit}
+.card input:focus,.card textarea:focus{border-color:#a855f7}
+.card textarea{resize:vertical;min-height:60px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
+.btn:hover{background:#9333ea}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-red{background:#f04747}
+.btn-red:hover{background:#d33a3a}
+.btn-outline{background:transparent;border:2px solid #a855f7;color:#a855f7}
+.btn-outline:hover{background:#a855f733}
+.btn-sm{padding:6px 12px;font-size:12px}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.alert-success{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474722;border:1px solid #f04747;color:#fca5a5}
+.history-item{background:#0f0f1a;border-radius:8px;padding:12px 14px;margin-bottom:6px;border:1px solid #1e1e3a;font-size:13px}
+.history-item .q{font-weight:600;margin-bottom:2px}
+.history-item .meta{color:#888;font-size:12px}
+.history-item .r{color:#ffd700;font-weight:700}
+footer{text-align:center;padding:30px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo"><img src="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png"> UAC <small>Admin</small></div>
+  <div class="user-info">
+    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+    <span><%= user.globalName %></span>
+    <a href="/logout">Déconnexion</a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>⚙️ Panneau <span>Admin</span></h1>
+  <p class="sub">Configure les questions et gère le jeu</p>
+
+  <div id="error" class="alert alert-error" style="display:none"></div>
+  <div id="success" class="alert alert-success" style="display:none"></div>
+
+  <div class="grid">
+    <!-- New question -->
+    <div class="card">
+      <h2>🎯 Nouvelle question</h2>
+      <label>Question</label>
+      <textarea id="q" placeholder="Ex: Combien de pingouins pour soulever un avion ?"></textarea>
+      <label>Réponse (nombre)</label>
+      <input type="number" id="a" placeholder="Ex: 42" step="any">
+      <label>Explication (optionnelle)</label>
+      <textarea id="r" placeholder="Pourquoi cette réponse ?"></textarea>
+      <label>Image contexte (URL, optionnelle)</label>
+      <input type="url" id="img" placeholder="https://...">
+      <button class="btn btn-green" onclick="newQuestion()">📢 Publier la question</button>
+      <button class="btn btn-outline btn-sm" onclick="resetGame()" style="margin-top:8px">🔄 Reset tout</button>
+    </div>
+
+    <!-- Current state -->
+    <div class="card">
+      <h2>📊 État actuel</h2>
+      <div id="state">
+        <p style="color:#888;font-size:13px">Chargement...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card" style="margin-top:16px">
+    <h2>📜 Historique</h2>
+    <div id="history"><p style="color:#888;font-size:13px">Chargement...</p></div>
+  </div>
+</div>
+
+<footer>UAC — Panneau d'administration</footer>
+
+<script>
+async function api(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('success');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+async function newQuestion() {
+  const question = document.getElementById('q').value.trim();
+  const answer = parseFloat(document.getElementById('a').value);
+  const reason = document.getElementById('r').value.trim();
+  const contextImg = document.getElementById('img').value.trim();
+  if (!question || isNaN(answer)) { showError('Question et réponse requises'); return; }
+  try {
+    await api('/api/admin/question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, answer, reason, contextImg })
+    });
+    showSuccess('✅ Question publiée !');
+    document.getElementById('q').value = '';
+    document.getElementById('a').value = '';
+    document.getElementById('r').value = '';
+    document.getElementById('img').value = '';
+    loadState();
+    loadHistory();
+  } catch(e) { showError(e.message); }
+}
+
+async function resetGame() {
+  if (!confirm('Tout réinitialiser ? Les questions et réponses seront supprimées.')) return;
+  try {
+    await fetch('/api/admin/question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: 'Le jeu a été réinitialisé - une nouvelle question arrive bientôt !',
+        answer: 0,
+        reason: 'Réinitialisation'
+      })
+    });
+    showSuccess('✅ Jeu réinitialisé');
+    loadState(); loadHistory();
+  } catch(e) { showError(e.message); }
+}
+
+async function loadState() {
+  try {
+    const data = await api('/api/state');
+    const el = document.getElementById('state');
+    if (data.round) {
+      el.innerHTML = `
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">${data.round.question}</div>
+        <div style="color:#888;font-size:12px">Réponse: <span style="color:#ffd700;font-weight:700">${data.round.answer !== null ? data.round.answer : '?'}</span></div>
+        <div style="color:#888;font-size:12px">Participants: ${data.bets.length}</div>
+        <div style="color:#888;font-size:12px">Révélé: ${data.round.revealed ? '✅ Oui' : '❌ Non'}</div>
+      `;
+    } else {
+      el.innerHTML = '<p style="color:#888">Aucune question en cours</p>';
+    }
+  } catch(e) {
+    document.getElementById('state').innerHTML = '<p style="color:#f04747">Erreur de chargement</p>';
+  }
+}
+
+async function loadHistory() {
+  try {
+    const data = await api('/api/admin/history');
+    const el = document.getElementById('history');
+    if (data.length === 0) { el.innerHTML = '<p style="color:#888">Aucun historique</p>'; return; }
+    el.innerHTML = data.map(r => `
+      <div class="history-item">
+        <div class="q">${r.question}</div>
+        <div class="meta">Réponse: <span class="r">${r.answer}</span> · ${(r.bets || []).length} participant(s) · par ${r.createdBy || 'admin'}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('history').innerHTML = '<p style="color:#f04747">Erreur</p>';
+  }
+}
+
+loadState(); loadHistory();
+setInterval(loadState, 5000);
+</script>
+</body>
+</html>

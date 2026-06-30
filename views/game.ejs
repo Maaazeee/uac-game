@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAC - Le Prix est Juste</title>
+<link rel="icon" href="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
+.logo img{height:32px;width:auto}
+.logo span{color:#c084fc}
+.logo small{font-size:12px;font-weight:400;color:#888;margin-left:8px}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #7c3aed}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:700px;margin:0 auto;padding:24px 16px;text-align:center}
+.btn{display:inline-flex;align-items:center;gap:8px;background:#a855f7;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:.2s}
+.btn:hover{background:#9333ea}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.game-card{background:#16213e;border-radius:12px;padding:24px;margin-bottom:16px;border:1px solid #1e2a4a;text-align:left}
+.game-card .label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.game-card .question{font-size:22px;font-weight:800;line-height:1.3;margin-bottom:12px}
+.game-card input,.game-card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:12px;border-radius:8px;font-size:16px;outline:none;transition:.2s;width:100%;font-family:inherit}
+.game-card input:focus,.game-card textarea:focus{border-color:#a855f7}
+.game-card textarea{resize:vertical;min-height:60px}
+.bet-row{display:flex;gap:10px;margin:12px 0}
+.bet-row input{flex:1}
+.bet-row button{flex-shrink:0}
+.bet-list{margin-top:20px}
+.bet-item{background:#0f0f1a;border-radius:8px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e1e3a}
+.bet-item .avatar{width:28px;height:28px;border-radius:50%;background:#2a2a4a;flex-shrink:0}
+.bet-item .name{flex:1;font-weight:600;font-size:14px}
+.bet-item .value{font-weight:900;font-size:18px;color:#c084fc}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:14px}
+.alert-info{background:#a855f733;border:1px solid #a855f7;color:#d8b4fe}
+.alert-success{background:#43b58133;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474733;border:1px solid #f04747;color:#fca5a5}
+.answer-reveal{text-align:center;margin:20px 0}
+.answer-reveal .big{font-size:56px;font-weight:900;color:#ffd700;line-height:1}
+.answer-reveal .sub{color:#888;margin-top:8px;font-size:14px}
+.waiting{color:#888;padding:20px;text-align:center}
+.spinner{width:40px;height:40px;border:3px solid #2a2a4a;border-top:3px solid #a855f7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{text-align:center;padding:30px;color:#555;font-size:13px}
+@media(max-width:500px){.bet-row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo"><img src="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png"> UAC <small>Underground Algerian Community</small></div>
+  <div class="user-info">
+    <% if (locals.user) { %>
+      <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+      <span><%= user.globalName %></span>
+      <% if (user.isAdmin) { %><span style="color:#a855f7;font-size:11px">(admin)</span><% } %>
+      <a href="/logout">Déconnexion</a>
+    <% } %>
+  </div>
+</div>
+
+<div class="container">
+  <div id="app">
+    <div v-if="loading" class="waiting">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+
+    <div v-if="!loading && !currentRound">
+      <div class="game-card" style="text-align:center;padding:40px">
+        <div style="font-size:48px;margin-bottom:12px">🎯</div>
+        <h2 style="margin-bottom:8px">En attente d'une question</h2>
+        <p style="color:#888">L'admin n'a pas encore posé de question. Reviens plus tard !</p>
+      </div>
+    </div>
+
+    <div v-if="currentRound && !loading">
+      <!-- Question -->
+      <div class="game-card">
+        <div class="label">Question du jour</div>
+        <div class="question">{{ currentRound.question }}</div>
+        <img v-if="currentRound.contextImg" :src="currentRound.contextImg" style="max-width:100%;border-radius:8px;margin-top:8px">
+      </div>
+
+      <!-- Answer revealed -->
+      <div v-if="currentRound.revealed && currentRound.answer !== null" class="answer-reveal">
+        <div class="label" style="margin-bottom:4px">Réponse</div>
+        <div class="big">{{ currentRound.answer }}</div>
+        <div v-if="currentRound.reason" class="sub">{{ currentRound.reason }}</div>
+      </div>
+
+      <!-- Bet form (only if not revealed) -->
+      <div v-if="!currentRound.revealed" class="game-card">
+        <div class="label" style="margin-bottom:8px">Ton estimation</div>
+        <div id="error-msg" class="alert alert-error" v-if="error" style="display:none">{{ error }}</div>
+        <div id="success-msg" class="alert alert-success" v-if="betSuccess" style="display:none">✅ Réponse envoyée !</div>
+        <div class="bet-row">
+          <input type="number" id="bet-value" placeholder="Nombre..." min="0" step="any">
+          <button class="btn btn-green" onclick="submitBet()">🚀 Envoyer</button>
+        </div>
+        <textarea id="bet-reason" placeholder="Explique ton raisonnement (optionnel)" style="margin-top:8px"></textarea>
+      </div>
+
+      <!-- Bets list -->
+      <div v-if="bets.length > 0" class="bet-list">
+        <div class="label" style="margin-bottom:8px;text-align:center">
+          {{ currentRound.revealed ? '🏆 Résultats' : '📊 En attente des réponses...' }}
+          ({{ bets.length }} participant(s))
+        </div>
+
+        <div v-for="(b, i) in sortedBets" class="bet-item" :style="i === 0 && currentRound.revealed ? 'border-color:#43b581;background:#43b5810d' : ''">
+          <img v-if="b.avatar && currentRound.revealed" :src="'https://cdn.discordapp.com/avatars/' + b.userId + '/' + b.avatar + '.png'" class="avatar">
+          <div v-if="!b.avatar || !currentRound.revealed" class="avatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">?</div>
+          <div class="name">
+            {{ currentRound.revealed ? b.username : 'Anonymous' }}
+            <div v-if="b.reason" style="font-weight:400;font-size:12px;color:#888">{{ b.reason }}</div>
+          </div>
+          <div class="value">
+            {{ b.value }}
+            <div v-if="currentRound.revealed && currentRound.answer !== null" style="font-size:11px;color:#888;font-weight:400">
+              ±{{ Math.abs(b.value - currentRound.answer) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>UAC — Underground Algerian Community · Le Prix est Juste</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js"></script>
+<script>
+const app = new Vue({
+  el: '#app',
+  data: {
+    currentRound: null,
+    bets: [],
+    loading: true,
+    error: '',
+    betSuccess: false
+  },
+  computed: {
+    sortedBets() {
+      let b = [...this.bets];
+      if (this.currentRound && this.currentRound.answer !== null) {
+        b.sort((a, bb) => {
+          const da = Math.abs(a.value - this.currentRound.answer);
+          const db = Math.abs(bb.value - this.currentRound.answer);
+          if (da !== db) return da - db;
+          if (a.value <= this.currentRound.answer && bb.value > this.currentRound.answer) return -1;
+          if (a.value > this.currentRound.answer && bb.value <= this.currentRound.answer) return 1;
+          return 0;
+        });
+      }
+      return b;
+    }
+  },
+  mounted() { this.loadState(); setInterval(() => this.loadState(), 5000); },
+  methods: {
+    async loadState() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        this.currentRound = data.round;
+        this.bets = data.bets || [];
+        this.loading = false;
+      } catch(e) { this.loading = false; }
+    }
+  }
+});
+
+async function submitBet() {
+  const val = parseFloat(document.getElementById('bet-value').value);
+  const reason = document.getElementById('bet-reason').value.trim();
+  if (isNaN(val)) { showError('Entre un nombre valide'); return; }
+
+  try {
+    const res = await fetch('/api/bet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: val, reason })
+    });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    document.getElementById('bet-value').value = '';
+    document.getElementById('bet-reason').value = '';
+    document.getElementById('bet-value').style.display = 'none';
+    document.querySelector('.bet-row button').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+    app.betSuccess = true;
+    app.loadState();
+  } catch(e) { showError('Erreur réseau'); }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
