@@ -41,7 +41,9 @@ body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;m
 .bet-item{background:#0f0f1a;border-radius:8px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e1e3a}
 .bet-item .avatar{width:28px;height:28px;border-radius:50%;background:#2a2a4a;flex-shrink:0}
 .bet-item .name{flex:1;font-weight:600;font-size:14px}
-.bet-item .value{font-weight:900;font-size:18px;color:#c084fc}
+.bet-item .value{font-weight:900;font-size:18px;color:#c084fc;text-align:right}
+.bet-item .bar-wrap{width:80px;height:4px;background:#2a2a4a;border-radius:2px;overflow:hidden;flex-shrink:0}
+.bet-item .bar{height:100%;border-radius:2px;transition:width .5s}
 .alert{padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:14px}
 .alert-info{background:#a855f733;border:1px solid #a855f7;color:#d8b4fe}
 .alert-success{background:#43b58133;border:1px solid #43b581;color:#6ee7b7}
@@ -49,13 +51,21 @@ body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;m
 .answer-reveal{text-align:center;margin:20px 0}
 .answer-reveal .big{font-size:56px;font-weight:900;color:#ffd700;line-height:1}
 .answer-reveal .sub{color:#888;margin-top:8px;font-size:14px}
+.timer{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;padding:10px 16px;border-radius:8px;background:#0f0f1a;border:1px solid #2a2a4a;font-size:14px}
+.timer .count{font-weight:900;font-size:20px;color:#c084fc;min-width:60px;text-align:center}
+.timer.warning{border-color:#f04747}
+.timer.warning .count{color:#f04747}
 .waiting{color:#888;padding:20px;text-align:center}
 .spinner{width:40px;height:40px;border:3px solid #2a2a4a;border-top:3px solid #a855f7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.top-links{display:flex;gap:12px;justify-content:center;margin-bottom:16px;font-size:13px}
+.top-links a{color:#888;text-decoration:none;font-weight:600}
+.top-links a:hover{color:#c084fc}
 footer{text-align:center;padding:30px;color:#555;font-size:13px}
 @media(max-width:500px){.bet-row{flex-direction:column}}
 [dir="rtl"] .game-card{text-align:right}
 [dir="rtl"] .bet-row{flex-direction:row-reverse}
+[dir="rtl"] .bet-item .value{text-align:left}
 </style>
 </head>
 <body>
@@ -81,6 +91,10 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 </div>
 
 <div class="container">
+  <div class="top-links">
+    <a href="/leaderboard">🏆 <%= t('nav.leaderboard') %></a>
+  </div>
+
   <div id="app">
     <div v-if="loading" class="waiting">
       <div class="spinner"></div>
@@ -96,19 +110,31 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
     </div>
 
     <div v-if="currentRound && !loading">
+      <!-- Timer -->
+      <div v-if="currentRound.deadline && !currentRound.revealed" class="timer" :class="{warning: remaining <= 300}">
+        <span>{{ translations.time_remaining }}</span>
+        <span class="count">{{ formattedTime }}</span>
+      </div>
+      <div v-if="currentRound.deadline && currentRound.revealed && remaining > 0" class="timer" style="border-color:#43b581">
+        <span>{{ translations.time_up }}</span>
+      </div>
+
+      <!-- Question -->
       <div class="game-card">
         <div class="label">{{ translations.question_label }}</div>
         <div class="question">{{ currentRound.question }}</div>
         <img v-if="currentRound.contextImg" :src="currentRound.contextImg" style="max-width:100%;border-radius:8px;margin-top:8px">
       </div>
 
+      <!-- Answer revealed -->
       <div v-if="currentRound.revealed && currentRound.answer !== null" class="answer-reveal">
         <div class="label" style="margin-bottom:4px">{{ translations.answer_label }}</div>
         <div class="big">{{ currentRound.answer }}</div>
         <div v-if="currentRound.reason" class="sub">{{ currentRound.reason }}</div>
       </div>
 
-      <div v-if="!currentRound.revealed" class="game-card">
+      <!-- Bet form (only if not revealed, deadline not passed, and user hasn't bet) -->
+      <div v-if="!currentRound.revealed && !userAlreadyBet" class="game-card">
         <div class="label" style="margin-bottom:8px">{{ translations.bet_label }}</div>
         <div id="error-msg" class="alert alert-error" v-if="error" style="display:none">{{ error }}</div>
         <div id="success-msg" class="alert alert-success" v-if="betSuccess" style="display:none">✅ {{ translations.bet_success }}</div>
@@ -118,7 +144,11 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
         </div>
         <textarea id="bet-reason" :placeholder="translations.bet_reason_placeholder" style="margin-top:8px"></textarea>
       </div>
+      <div v-if="!currentRound.revealed && userAlreadyBet" class="alert alert-info" style="text-align:center">
+        ✅ {{ translations.bet_already }}
+      </div>
 
+      <!-- Bets list -->
       <div v-if="bets.length > 0" class="bet-list">
         <div class="label" style="margin-bottom:8px;text-align:center">
           {{ currentRound.revealed ? '🏆 ' + translations.results : '📊 ' + translations.waiting_bets }}
@@ -131,6 +161,9 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
           <div class="name">
             {{ currentRound.revealed ? b.username : translations.anonymous }}
             <div v-if="b.reason" style="font-weight:400;font-size:12px;color:#888">{{ b.reason }}</div>
+          </div>
+          <div v-if="currentRound.revealed && currentRound.answer !== null" class="bar-wrap">
+            <div class="bar" :style="{width: proximityPercent(b.value) + '%', background: i === 0 ? '#43b581' : '#a855f7'}"></div>
           </div>
           <div class="value">
             {{ b.value }}
@@ -159,7 +192,10 @@ const app = new Vue({
     loading: true,
     error: '',
     betSuccess: false,
-    translations: window.translations
+    userAlreadyBet: false,
+    translations: window.translations,
+    remaining: 0,
+    timerInterval: null
   },
   computed: {
     sortedBets() {
@@ -175,9 +211,18 @@ const app = new Vue({
         });
       }
       return b;
+    },
+    formattedTime() {
+      const t = this.remaining;
+      if (t <= 0) return '';
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = t % 60;
+      if (h > 0) return h + this.translations.time_hours + ' ' + m + this.translations.time_minutes;
+      if (m > 0) return m + this.translations.time_minutes + ' ' + s + this.translations.time_seconds;
+      return s + this.translations.time_seconds;
     }
   },
-  mounted() { this.loadState(); setInterval(() => this.loadState(), 5000); },
   methods: {
     async loadState() {
       try {
@@ -185,10 +230,41 @@ const app = new Vue({
         const data = await res.json();
         this.currentRound = data.round;
         this.bets = data.bets || [];
+        this.userAlreadyBet = data.userAlreadyBet || false;
         this.loading = false;
+        // Start timer if deadline exists
+        if (data.round && data.round.deadline) {
+          this.updateRemaining(data.round.deadline);
+          if (!this.timerInterval) {
+            this.timerInterval = setInterval(() => {
+              if (this.currentRound && this.currentRound.deadline) {
+                this.updateRemaining(this.currentRound.deadline);
+              }
+            }, 1000);
+          }
+        } else {
+          this.remaining = 0;
+          if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+        }
       } catch(e) { this.loading = false; }
+    },
+    updateRemaining(deadline) {
+      this.remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+      if (this.remaining <= 0) {
+        // Time's up, reload to get revealed state
+        setTimeout(() => this.loadState(), 500);
+      }
+    },
+    proximityPercent(val) {
+      if (!this.currentRound || this.currentRound.answer === null) return 0;
+      const diff = Math.abs(val - this.currentRound.answer);
+      const maxDiff = Math.max(...this.bets.map(b => Math.abs(b.value - this.currentRound.answer)));
+      if (maxDiff === 0) return 100;
+      return Math.max(5, 100 - (diff / maxDiff) * 100);
     }
-  }
+  },
+  mounted() { this.loadState(); setInterval(() => this.loadState(), 5000); },
+  beforeDestroy() { if (this.timerInterval) clearInterval(this.timerInterval); }
 });
 
 async function submitBet() {

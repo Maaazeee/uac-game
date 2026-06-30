@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= t('admin_questions.title') %></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:800px;margin:0 auto;padding:24px 16px}
+h1{font-size:22px;font-weight:900;margin-bottom:4px}
+h1 span{color:#c084fc}
+.sub{color:#888;font-size:13px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;align-items:start}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a}
+.card h2{font-size:15px;margin-bottom:12px;color:#c084fc;display:flex;align-items:center;justify-content:space-between}
+.card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+.card input,.card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:10px;font-family:inherit}
+.card input:focus,.card textarea:focus{border-color:#a855f7}
+.card textarea{resize:vertical;min-height:50px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
+.btn:hover{background:#9333ea}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-red{background:#f04747}
+.btn-red:hover{background:#d33a3a}
+.btn-sm{padding:5px 10px;font-size:11px}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.alert-success{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474722;border:1px solid #f04747;color:#fca5a5}
+.q-item{background:#0f0f1a;border-radius:8px;padding:12px 14px;margin-bottom:6px;border:1px solid #1e1e3a;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+.q-item .content{flex:1}
+.q-item .q-text{font-weight:600;margin-bottom:2px}
+.q-item .q-meta{color:#888;font-size:12px}
+.q-item .q-actions{display:flex;gap:4px;flex-shrink:0}
+.q-count{color:#888;font-size:13px;margin-bottom:12px}
+.empty{text-align:center;color:#888;padding:30px;font-size:14px}
+footer{text-align:center;padding:30px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo"><span>UAC</span></div>
+    <div class="nav-links">
+      <a href="/admin" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
+  <div class="user-info">
+    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+    <span><%= user.globalName %></span>
+    <a href="/logout"><%= t('nav.logout') %></a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>📚 <span><%= t('admin_questions.heading') %></span></h1>
+  <p class="sub"><%= t('admin_questions.sub') %></p>
+
+  <div id="error" class="alert alert-error" style="display:none"></div>
+  <div id="success" class="alert alert-success" style="display:none"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 id="form-title">➕ <%= t('admin_questions.add') %></h2>
+      <label><%= t('admin_questions.question_label') %></label>
+      <textarea id="q" placeholder="<%= t('admin_questions.question_placeholder') %>"></textarea>
+      <label><%= t('admin_questions.answer_label') %></label>
+      <input type="number" id="a" placeholder="<%= t('admin_questions.answer_placeholder') %>" step="any">
+      <label><%= t('admin_questions.reason_label') %></label>
+      <input id="r" placeholder="<%= t('admin_questions.reason_placeholder') %>">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-green" id="save-btn" onclick="saveQuestion()">💾 <%= t('admin_questions.save') %></button>
+        <button class="btn btn-sm" id="cancel-btn" onclick="cancelEdit()" style="display:none"><%= t('admin_questions.cancel') %></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><%= t('admin_questions.list') %> <span id="q-count" class="q-count"></span></h2>
+      <div id="q-list"><p style="color:#888;font-size:13px"><%= t('admin_questions.loading') %></p></div>
+    </div>
+  </div>
+</div>
+
+<footer><%= t('admin_questions.footer') || 'UAC' %></footer>
+
+<script>
+var translations = <%- JSON.stringify(locale.admin_questions || locale) %>;
+var editingIndex = -1;
+
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function clearForm() {
+  document.getElementById('q').value = '';
+  document.getElementById('a').value = '';
+  document.getElementById('r').value = '';
+  editingIndex = -1;
+  document.getElementById('form-title').innerHTML = '➕ ' + (window.translations.add || 'Ajouter');
+  document.getElementById('save-btn').innerHTML = '💾 ' + (window.translations.save || 'Enregistrer');
+  document.getElementById('cancel-btn').style.display = 'none';
+}
+
+function cancelEdit() { clearForm(); }
+
+async function saveQuestion() {
+  const q = document.getElementById('q').value.trim();
+  const a = parseFloat(document.getElementById('a').value);
+  const r = document.getElementById('r').value.trim();
+  if (!q || isNaN(a)) { showError(window.translations.question_required || 'Question et réponse requises'); return; }
+
+  try {
+    if (editingIndex >= 0) {
+      await api('/api/admin/questions/' + editingIndex, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q, a, r })
+      });
+      showSuccess('✅ ' + (window.translations.updated || 'Question modifiée'));
+    } else {
+      await api('/api/admin/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q, a, r })
+      });
+      showSuccess('✅ ' + (window.translations.added || 'Question ajoutée'));
+    }
+    clearForm();
+    loadQuestions();
+  } catch(e) { showError(e.message); }
+}
+
+async function editQuestion(index) {
+  try {
+    const questions = await api('/api/admin/questions');
+    const q = questions[index];
+    document.getElementById('q').value = q.q;
+    document.getElementById('a').value = q.a;
+    document.getElementById('r').value = q.r || '';
+    editingIndex = index;
+    document.getElementById('form-title').innerHTML = '✏️ ' + (window.translations.edit || 'Modifier');
+    document.getElementById('save-btn').innerHTML = '💾 ' + (window.translations.save || 'Enregistrer');
+    document.getElementById('cancel-btn').style.display = 'inline-flex';
+  } catch(e) { showError(e.message); }
+}
+
+async function deleteQuestion(index) {
+  if (!confirm(window.translations.delete_confirm || 'Supprimer cette question ?')) return;
+  try {
+    await api('/api/admin/questions/' + index, { method: 'DELETE' });
+    showSuccess('🗑️ ' + (window.translations.deleted || 'Question supprimée'));
+    loadQuestions();
+  } catch(e) { showError(e.message); }
+}
+
+async function loadQuestions() {
+  try {
+    const questions = await api('/api/admin/questions');
+    const el = document.getElementById('q-list');
+    document.getElementById('q-count').textContent = '(' + questions.length + ')';
+    if (questions.length === 0) {
+      el.innerHTML = '<div class="empty">📭 ' + (window.translations.empty || 'Aucune question') + '</div>';
+      return;
+    }
+    el.innerHTML = questions.map((q, i) => `
+      <div class="q-item">
+        <div class="content">
+          <div class="q-text">${q.q}</div>
+          <div class="q-meta">🎯 ${q.a} ${q.r ? '· 💬 ' + q.r : ''}</div>
+        </div>
+        <div class="q-actions">
+          <button class="btn btn-sm" onclick="editQuestion(${i})">✏️</button>
+          <button class="btn btn-sm btn-red" onclick="deleteQuestion(${i})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('q-list').innerHTML = '<p style="color:#f04747">' + (window.translations.error || 'Erreur') + '</p>';
+  }
+}
+
+loadQuestions();
+</script>
+</body>
+</html>

@@ -31,8 +31,9 @@ h1 span{color:#c084fc}
 .card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a}
 .card h2{font-size:15px;margin-bottom:12px;color:#c084fc}
 .card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
-.card input,.card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:10px;font-family:inherit}
-.card input:focus,.card textarea:focus{border-color:#a855f7}
+.card input,.card textarea,.card select{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:10px;font-family:inherit}
+.card input:focus,.card textarea:focus,.card select:focus{border-color:#a855f7}
+.card select option{background:#0f0f1a;color:#fff}
 .card textarea{resize:vertical;min-height:60px}
 .btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
 .btn:hover{background:#9333ea}
@@ -90,8 +91,19 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
       <textarea id="r" placeholder="<%= t('admin.reason_placeholder') %>"></textarea>
       <label><%= t('admin.image_label') %></label>
       <input type="url" id="img" placeholder="<%= t('admin.image_placeholder') %>">
+      <label><%= t('admin.duration_label') %></label>
+      <select id="dur">
+        <option value="0"><%= t('admin.instant') %></option>
+        <option value="1"><%= t('admin.hour_1') %></option>
+        <option value="6"><%= t('admin.hour_6') %></option>
+        <option value="12" selected><%= t('admin.hour_12') %></option>
+        <option value="24"><%= t('admin.hour_24') %></option>
+        <option value="48"><%= t('admin.hour_48') %></option>
+      </select>
       <button class="btn btn-green" onclick="newQuestion()">📢 <%= t('admin.publish') %></button>
-      <button class="btn btn-outline btn-sm" onclick="resetGame()" style="margin-top:8px">🔄 <%= t('admin.reset') %></button>
+      <button class="btn btn-outline btn-sm" onclick="randomQuestion()" style="margin-top:4px">🎲 <%= t('admin.funny_question') %></button>
+      <button class="btn btn-outline btn-sm" onclick="resetGame()" style="margin-top:4px">🔄 <%= t('admin.reset') %></button>
+      <a href="/admin/questions" class="btn btn-outline btn-sm" style="display:inline-flex;margin-top:4px;text-decoration:none">📚 <%= t('admin.manage_questions') %></a>
     </div>
 
     <div class="card">
@@ -137,12 +149,13 @@ async function newQuestion() {
   const answer = parseFloat(document.getElementById('a').value);
   const reason = document.getElementById('r').value.trim();
   const contextImg = document.getElementById('img').value.trim();
+  const duration = parseInt(document.getElementById('dur').value);
   if (!question || isNaN(answer)) { showError(window.translations.question_required || 'Question et réponse requises'); return; }
   try {
     await api('/api/admin/question', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, answer, reason, contextImg })
+      body: JSON.stringify({ question, answer, reason, contextImg, duration })
     });
     showSuccess('✅ ' + (window.translations.published || 'Question publiée !'));
     document.getElementById('q').value = '';
@@ -151,6 +164,15 @@ async function newQuestion() {
     document.getElementById('img').value = '';
     loadState();
     loadHistory();
+  } catch(e) { showError(e.message); }
+}
+
+async function randomQuestion() {
+  try {
+    const data = await api('/api/admin/random-question');
+    document.getElementById('q').value = data.q;
+    document.getElementById('a').value = data.a;
+    document.getElementById('r').value = data.r;
   } catch(e) { showError(e.message); }
 }
 
@@ -163,10 +185,19 @@ async function resetGame() {
       body: JSON.stringify({
         question: 'Le jeu a été réinitialisé - une nouvelle question arrive bientôt !',
         answer: 0,
-        reason: 'Réinitialisation'
+        reason: 'Réinitialisation',
+        duration: 0
       })
     });
     showSuccess('✅ ' + (window.translations.reset_done || 'Jeu réinitialisé'));
+    loadState(); loadHistory();
+  } catch(e) { showError(e.message); }
+}
+
+async function revealNow() {
+  try {
+    await api('/api/admin/reveal', { method: 'POST' });
+    showSuccess('✅ ' + (window.translations.revealed || 'Révélé !'));
     loadState(); loadHistory();
   } catch(e) { showError(e.message); }
 }
@@ -180,11 +211,16 @@ async function loadState() {
       var revealedLabel = window.translations.revealed || 'Révélé';
       var yesLabel = window.translations.yes || 'Oui';
       var noLabel = window.translations.no || 'Non';
+      var revealBtn = '';
+      if (!data.round.revealed && data.round.deadline) {
+        revealBtn = '<button class="btn btn-sm" onclick="revealNow()" style="margin-top:8px">🔓 ' + (window.translations.reveal_now || 'Révéler maintenant') + '</button>';
+      }
       el.innerHTML = `
         <div style="font-size:14px;font-weight:700;margin-bottom:4px">${data.round.question}</div>
         <div style="color:#888;font-size:12px">Réponse: <span style="color:#ffd700;font-weight:700">${data.round.answer !== null ? data.round.answer : '?'}</span></div>
         <div style="color:#888;font-size:12px">${participantsLabel}: ${data.bets.length}</div>
         <div style="color:#888;font-size:12px">${revealedLabel}: ${data.round.revealed ? '✅ ' + yesLabel : '❌ ' + noLabel}</div>
+        ${revealBtn}
       `;
     } else {
       el.innerHTML = '<p style="color:#888">' + (window.translations.no_round || 'Aucune question en cours') + '</p>';
@@ -202,7 +238,7 @@ async function loadHistory() {
     el.innerHTML = data.map(r => `
       <div class="history-item">
         <div class="q">${r.question}</div>
-        <div class="meta">Réponse: <span class="r">${r.answer}</span> · ${(r.bets || []).length} participant(s) · par ${r.createdBy || 'admin'}</div>
+        <div class="meta">Réponse: <span class="r">${r.answer}</span> · ${(r.bets || []).length} participant(s) · par ${r.createdBy || 'admin'}${r.deadline ? ' · ⏱ ' + Math.round((r.deadline - Date.now()) / 3600000) + 'h' : ''}</div>
       </div>
     `).join('');
   } catch(e) {

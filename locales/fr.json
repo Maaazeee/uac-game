@@ -4,7 +4,8 @@
   "nav": {
     "games": "Jeux",
     "back": "← Mes jeux",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "leaderboard": "Classement"
   },
   "home": {
     "title": "Underground Algerian Community",
@@ -24,6 +25,8 @@
     "game_desc": "Devine le nombre le plus proche de la réponse et gagne !",
     "admin_title": "Panneau Admin",
     "admin_desc": "Configurer les questions, gérer les manches",
+    "leaderboard_title": "Classement",
+    "leaderboard_desc": "Voir le classement des joueurs",
     "footer": "UAC — Underground Algerian Community"
   },
   "game": {
@@ -46,7 +49,23 @@
     "participants": "participant(s)",
     "anonymous": "Anonyme",
     "no_round": "Aucune manche en cours",
+    "time_remaining": "Temps restant",
+    "time_hours": "h",
+    "time_minutes": "m",
+    "time_seconds": "s",
+    "time_up": "Temps écoulé !",
     "footer": "UAC — Underground Algerian Community"
+  },
+  "leaderboard": {
+    "title": "Classement - UAC",
+    "heading": "Classement",
+    "sub": "Les meilleurs joueurs du Prix est Juste",
+    "rank": "Rang",
+    "player": "Joueur",
+    "points": "Points",
+    "wins": "Victoires",
+    "bets": "Participations",
+    "empty": "Aucun classement pour le moment. Les résultats apparaîtront après les premières manches."
   },
   "admin": {
     "title": "Admin - UAC Prix est Juste",
@@ -61,7 +80,16 @@
     "reason_placeholder": "Pourquoi cette réponse ?",
     "image_label": "Image contexte (URL, optionnelle)",
     "image_placeholder": "https://...",
+    "duration_label": "Durée",
+    "instant": "Instantané",
+    "hour_1": "1 heure",
+    "hour_6": "6 heures",
+    "hour_12": "12 heures",
+    "hour_24": "24 heures",
+    "hour_48": "48 heures",
     "publish": "Publier la question",
+    "funny_question": "Question drôle aléatoire",
+    "manage_questions": "Gérer les questions",
     "reset": "Reset tout",
     "current_state": "État actuel",
     "history": "Historique",
@@ -69,6 +97,7 @@
     "loading": "Chargement...",
     "error": "Erreur de chargement",
     "published": "Question publiée !",
+    "reveal_now": "Révéler maintenant",
     "reset_confirm": "Tout réinitialiser ? Les questions et réponses seront supprimées.",
     "reset_done": "Jeu réinitialisé",
     "participants": "Participant(s)",
@@ -76,6 +105,30 @@
     "yes": "Oui",
     "no": "Non",
     "footer": "UAC — Panneau d'administration"
+  },
+  "admin_questions": {
+    "title": "Questions - UAC",
+    "heading": "Banque de questions",
+    "sub": "Ajoute, modifie ou supprime les questions disponibles",
+    "add": "Ajouter une question",
+    "edit": "Modifier la question",
+    "question_label": "Question",
+    "question_placeholder": "Combien de...",
+    "answer_label": "Réponse (nombre)",
+    "answer_placeholder": "Ex: 42",
+    "reason_label": "Explication (optionnelle)",
+    "reason_placeholder": "Pourquoi cette réponse ?",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "list": "Questions",
+    "loading": "Chargement...",
+    "empty": "Aucune question dans la banque",
+    "added": "Question ajoutée !",
+    "updated": "Question modifiée !",
+    "deleted": "Question supprimée",
+    "delete_confirm": "Supprimer cette question ?",
+    "error": "Erreur de chargement",
+    "footer": "UAC — Banque de questions"
   },
   "errors": {
     "auth": "Erreur d'authentification. Vérifie les logs.",
@@ -87,6 +140,7 @@
     "question_required": "Question et réponse requises",
     "no_round_found": "Aucune manche",
     "not_member_title": "Accès refusé",
-    "not_member": "Tu dois être membre du serveur Discord UAC pour te connecter. Rejoins-nous d'abord !"
+    "not_member": "Tu dois être membre du serveur Discord UAC pour te connecter. Rejoins-nous d'abord !",
+    "time_up": "Le temps est écoulé !"
   }
 }

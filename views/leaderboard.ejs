@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><%= t('games.title') %></title>
+<title><%= t('leaderboard.title') %></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
@@ -26,16 +26,23 @@ body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;m
 .container{max-width:600px;margin:0 auto;padding:32px 16px}
 h1{font-size:24px;font-weight:900;margin-bottom:4px}
 .sub{color:#888;font-size:14px;margin-bottom:24px}
-.game-card{background:#16213e;border-radius:12px;padding:24px;border:1px solid #1e2a4a;display:flex;align-items:center;gap:16px;cursor:pointer;transition:.2s;margin-bottom:12px;text-decoration:none;color:inherit}
-.game-card:hover{background:#1a2550;border-color:#7c3aed;transform:translateY(-2px)}
-.game-card .icon{font-size:40px;flex-shrink:0}
-.game-card .info{flex:1}
-.game-card .info h2{font-size:18px;font-weight:700;margin-bottom:2px}
-.game-card .info p{font-size:13px;color:#888}
-.game-card .arrow{font-size:20px;color:#555}
-.admin-card{border-color:#7c3aed;background:#1e1040}
-.admin-card:hover{background:#2a1060}
+.leaderboard{list-style:none}
+.lb-item{background:#16213e;border-radius:10px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e2a4a;transition:.2s}
+.lb-item:hover{border-color:#7c3aed}
+.lb-item .rank{width:32px;height:32px;border-radius:50%;background:#0f0f1a;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0;color:#888}
+.lb-item .rank.gold{background:#ffd70022;border:2px solid #ffd700;color:#ffd700}
+.lb-item .rank.silver{background:#c0c0c022;border:2px solid #c0c0c0;color:#c0c0c0}
+.lb-item .rank.bronze{background:#cd7f3222;border:2px solid #cd7f32;color:#cd7f32}
+.lb-item .avatar{width:32px;height:32px;border-radius:50%;background:#2a2a4a;flex-shrink:0}
+.lb-item .name{flex:1;font-weight:600;font-size:14px}
+.lb-item .stats{text-align:right;font-size:12px;color:#888;flex-shrink:0}
+.lb-item .stats strong{display:block;font-size:18px;color:#c084fc;font-weight:900}
+.empty{text-align:center;color:#888;padding:40px;font-size:14px;line-height:1.6}
+.loading{text-align:center;color:#888;padding:40px}
+.spinner{width:32px;height:32px;border:3px solid #2a2a4a;border-top:3px solid #a855f7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
 footer{text-align:center;padding:24px;color:#555;font-size:13px}
+[dir="rtl"] .lb-item .stats{text-align:left}
 </style>
 </head>
 <body>
@@ -47,6 +54,7 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <span>UAC</span>
     </div>
     <div class="nav-links">
+      <a href="/games"><%= t('nav.games') %></a>
       <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
       <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
       <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
@@ -60,40 +68,54 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
 </div>
 
 <div class="container">
-  <h1>🎮 <%= t('games.heading') %></h1>
-  <p class="sub"><%- t('games.welcome', { name: user.globalName }) %></p>
+  <h1>🏆 <%= t('leaderboard.heading') %></h1>
+  <p class="sub"><%= t('leaderboard.sub') %></p>
 
-  <a href="/game" class="game-card">
-    <div class="icon">🎯</div>
-    <div class="info">
-      <h2><%= t('games.game_title') %></h2>
-      <p><%= t('games.game_desc') %></p>
+  <div id="app">
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      <p><%= t('game.loading') %></p>
     </div>
-    <div class="arrow">→</div>
-  </a>
-
-  <a href="/leaderboard" class="game-card">
-    <div class="icon">🏆</div>
-    <div class="info">
-      <h2><%= t('games.leaderboard_title') %></h2>
-      <p><%= t('games.leaderboard_desc') %></p>
+    <div v-else-if="entries.length === 0" class="empty">
+      <div style="font-size:48px;margin-bottom:12px">🏆</div>
+      <p><%= t('leaderboard.empty') %></p>
     </div>
-    <div class="arrow">→</div>
-  </a>
-
-  <% if (user.isAdmin) { %>
-    <a href="/admin" class="game-card admin-card">
-      <div class="icon">⚙️</div>
-      <div class="info">
-        <h2><%= t('games.admin_title') %></h2>
-        <p><%= t('games.admin_desc') %></p>
+    <div v-else class="leaderboard">
+      <div v-for="(e, i) in entries" class="lb-item">
+        <div class="rank" :class="{gold:i===0,silver:i===1,bronze:i===2}">{{ i + 1 }}</div>
+        <img v-if="e.avatar" :src="'https://cdn.discordapp.com/avatars/' + e.userId + '/' + e.avatar + '.png'" class="avatar">
+        <div v-else class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:14px">?</div>
+        <div class="name">{{ e.username }}</div>
+        <div class="stats">
+          <strong>{{ e.points }}</strong>
+          <span><%= t('leaderboard.points') %></span>
+          <div style="color:#888;font-size:11px;margin-top:2px">
+            {{ e.wins }} <%= t('leaderboard.wins') %> · {{ e.bets }} <%= t('leaderboard.bets') %>
+          </div>
+        </div>
       </div>
-      <div class="arrow">→</div>
-    </a>
-  <% } %>
+    </div>
+  </div>
 </div>
 
-<footer><%= t('games.footer') %></footer>
+<footer>UAC — Underground Algerian Community</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js"></script>
+<script>
+new Vue({
+  el: '#app',
+  data: { entries: [], loading: true },
+  mounted() { this.load(); },
+  methods: {
+    async load() {
+      try {
+        const res = await fetch('/api/leaderboard');
+        this.entries = await res.json();
+      } catch(e) {}
+      this.loading = false;
+    }
+  }
+});
+</script>
 </body>
 </html>

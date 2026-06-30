@@ -171,6 +171,11 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+// Question bank management page
+app.get('/admin/questions', requireAuth, requireAdmin, (req, res) => {
+  res.render('admin-questions', { user: req.session.user, ADMINS });
+});
+
 // Games hub
 app.get('/games', requireAuth, (req, res) => {
   res.render('games', { user: req.session.user });
@@ -178,23 +183,57 @@ app.get('/games', requireAuth, (req, res) => {
 
 // --- API ---
 
+// Auto-reveal helper: check deadline
+function autoReveal(round) {
+  if (!round.revealed && round.deadline && Date.now() >= round.deadline) {
+    round.revealed = true;
+    return true;
+  }
+  return false;
+}
+
+// Leaderboard calculation
+function computeLeaderboard(rounds) {
+  const scores = {};
+  for (const r of rounds) {
+    if (!r.revealed || !r.bets || r.bets.length === 0) continue;
+    const sorted = [...r.bets].sort((a, b) => {
+      const da = Math.abs(a.value - r.answer);
+      const db = Math.abs(b.value - r.answer);
+      if (da !== db) return da - db;
+      if (a.value <= r.answer && b.value > r.answer) return -1;
+      if (a.value > r.answer && b.value <= r.answer) return 1;
+      return 0;
+    });
+    sorted.forEach((b, i) => {
+      if (!scores[b.userId]) {
+        scores[b.userId] = { userId: b.userId, username: b.username, avatar: b.avatar, points: 0, wins: 0, bets: 0 };
+      }
+      scores[b.userId].bets++;
+      if (i === 0) { scores[b.userId].points += 3; scores[b.userId].wins++; }
+      else if (i === 1) scores[b.userId].points += 2;
+      else if (i === 2) scores[b.userId].points += 1;
+    });
+  }
+  return Object.values(scores).sort((a, b) => b.points - a.points || b.wins - a.wins);
+}
+
 // Get current game state
 app.get('/api/state', (req, res) => {
   const db = loadDB();
   const currentRound = db.rounds[db.rounds.length - 1] || null;
   if (!currentRound) return res.json({ round: null, bets: [] });
 
+  // Auto-reveal if deadline passed
+  if (autoReveal(currentRound)) saveDB(db);
+
   const bets = (currentRound.bets || []).map(b => {
-    // Don't expose who voted to other players before reveal
     const isRevealed = currentRound.revealed;
     if (isRevealed) return b;
-    // Before reveal, only show anonymous bet count + values (no names)
-    return {
-      value: b.value,
-      reason: b.reason || null,
-      anonymous: true
-    };
+    return { value: b.value, reason: b.reason || null, anonymous: true };
   });
+
+  const userAlreadyBet = req.session.user && (currentRound.bets || []).some(b => b.userId === req.session.user.id);
 
   res.json({
     round: {
@@ -203,9 +242,12 @@ app.get('/api/state', (req, res) => {
       contextImg: currentRound.contextImg || null,
       answer: currentRound.revealed ? currentRound.answer : null,
       reason: currentRound.revealed ? currentRound.reason : null,
-      revealed: currentRound.revealed
+      revealed: currentRound.revealed,
+      deadline: currentRound.deadline || null,
+      createdAt: currentRound.createdAt
     },
-    bets
+    bets,
+    userAlreadyBet
   });
 });
 
@@ -219,6 +261,7 @@ app.post('/api/bet', requireAuth, (req, res) => {
   const db = loadDB();
   const round = db.rounds[db.rounds.length - 1];
   if (!round || round.revealed) return res.status(400).json({ error: res.locals.t('errors.no_round') });
+  if (round.deadline && Date.now() >= round.deadline) return res.status(400).json({ error: res.locals.t('errors.time_up') });
 
   // Check if user already bet
   if (round.bets.find(b => b.userId === req.session.user.id)) {
@@ -242,17 +285,26 @@ app.post('/api/bet', requireAuth, (req, res) => {
 
 // Set new round
 app.post('/api/admin/question', requireAuth, requireAdmin, (req, res) => {
-  const { question, answer, reason, contextImg } = req.body;
+  const { question, answer, reason, contextImg, duration } = req.body;
   if (!question || answer === undefined) return res.status(400).json({ error: res.locals.t('errors.question_required') });
 
   const db = loadDB();
+  let deadline = null;
+  let revealed = false;
+  if (duration === 0 || !duration) {
+    revealed = true; // Instant reveal
+  } else {
+    deadline = Date.now() + duration * 3600 * 1000; // duration in hours
+  }
+
   const round = {
     id: Date.now(),
     question,
     answer: parseFloat(answer),
     reason: reason || null,
     contextImg: contextImg || null,
-    revealed: true, // Auto-reveal so players see answer immediately
+    revealed,
+    deadline,
     bets: [],
     createdBy: req.session.user.username,
     createdAt: new Date().toISOString()
@@ -278,6 +330,77 @@ app.post('/api/admin/reveal', requireAuth, requireAdmin, (req, res) => {
 app.get('/api/admin/history', requireAuth, requireAdmin, (req, res) => {
   const db = loadDB();
   res.json(db.rounds.slice(-20).reverse());
+});
+
+// --- Question Bank Management ---
+
+const QUESTIONS_PATH = path.join(__dirname, 'questions.json');
+
+function loadQuestions() {
+  try { return JSON.parse(fs.readFileSync(QUESTIONS_PATH, 'utf8')); }
+  catch { return []; }
+}
+
+function saveQuestions(questions) {
+  fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(questions, null, 2));
+}
+
+// Get all questions
+app.get('/api/admin/questions', requireAuth, requireAdmin, (req, res) => {
+  res.json(loadQuestions());
+});
+
+// Add a question
+app.post('/api/admin/questions', requireAuth, requireAdmin, (req, res) => {
+  const { q, a, r } = req.body;
+  if (!q || a === undefined) return res.status(400).json({ error: 'Question (q) et réponse (a) requises' });
+  const questions = loadQuestions();
+  questions.push({ q: q.trim(), a: parseFloat(a), r: (r || '').trim() });
+  saveQuestions(questions);
+  res.json({ success: true, index: questions.length - 1 });
+});
+
+// Update a question
+app.put('/api/admin/questions/:index', requireAuth, requireAdmin, (req, res) => {
+  const { q, a, r } = req.body;
+  const index = parseInt(req.params.index);
+  const questions = loadQuestions();
+  if (index < 0 || index >= questions.length) return res.status(404).json({ error: 'Question introuvable' });
+  if (!q || a === undefined) return res.status(400).json({ error: 'Question (q) et réponse (a) requises' });
+  questions[index] = { q: q.trim(), a: parseFloat(a), r: (r || '').trim() };
+  saveQuestions(questions);
+  res.json({ success: true });
+});
+
+// Delete a question
+app.delete('/api/admin/questions/:index', requireAuth, requireAdmin, (req, res) => {
+  const index = parseInt(req.params.index);
+  const questions = loadQuestions();
+  if (index < 0 || index >= questions.length) return res.status(404).json({ error: 'Question introuvable' });
+  questions.splice(index, 1);
+  saveQuestions(questions);
+  res.json({ success: true });
+});
+
+// Get random funny question
+app.get('/api/admin/random-question', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const questions = loadQuestions();
+    if (questions.length === 0) return res.json({ q: "Alger est la capitale de ?", a: 1962, r: "Année d'indépendance" });
+    const q = questions[Math.floor(Math.random() * questions.length)];
+    res.json(q);
+  } catch { res.json({ q: '', a: 0, r: '' }); }
+});
+
+// --- Leaderboard ---
+
+app.get('/leaderboard', requireAuth, (req, res) => {
+  res.render('leaderboard', { user: req.session.user });
+});
+
+app.get('/api/leaderboard', (req, res) => {
+  const db = loadDB();
+  res.json(computeLeaderboard(db.rounds));
 });
 
 // --- Start ---

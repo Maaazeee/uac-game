@@ -4,7 +4,8 @@
   "nav": {
     "games": "Games",
     "back": "← My games",
-    "logout": "Logout"
+    "logout": "Logout",
+    "leaderboard": "Leaderboard"
   },
   "home": {
     "title": "Underground Algerian Community",
@@ -24,6 +25,8 @@
     "game_desc": "Guess the closest number to the answer and win!",
     "admin_title": "Admin Panel",
     "admin_desc": "Configure questions, manage rounds",
+    "leaderboard_title": "Leaderboard",
+    "leaderboard_desc": "View player rankings",
     "footer": "UAC — Underground Algerian Community"
   },
   "game": {
@@ -46,7 +49,23 @@
     "participants": "participant(s)",
     "anonymous": "Anonymous",
     "no_round": "No round in progress",
+    "time_remaining": "Time remaining",
+    "time_hours": "h",
+    "time_minutes": "m",
+    "time_seconds": "s",
+    "time_up": "Time's up!",
     "footer": "UAC — Underground Algerian Community"
+  },
+  "leaderboard": {
+    "title": "Leaderboard - UAC",
+    "heading": "Leaderboard",
+    "sub": "The best Price is Right players",
+    "rank": "Rank",
+    "player": "Player",
+    "points": "Points",
+    "wins": "Wins",
+    "bets": "Rounds",
+    "empty": "No rankings yet. Results will appear after the first rounds."
   },
   "admin": {
     "title": "Admin - UAC Price is Right",
@@ -61,7 +80,16 @@
     "reason_placeholder": "Why this answer?",
     "image_label": "Context image (URL, optional)",
     "image_placeholder": "https://...",
+    "duration_label": "Duration",
+    "instant": "Instant",
+    "hour_1": "1 hour",
+    "hour_6": "6 hours",
+    "hour_12": "12 hours",
+    "hour_24": "24 hours",
+    "hour_48": "48 hours",
     "publish": "Publish question",
+    "funny_question": "Random funny question",
+    "manage_questions": "Manage questions",
     "reset": "Reset all",
     "current_state": "Current state",
     "history": "History",
@@ -69,6 +97,7 @@
     "loading": "Loading...",
     "error": "Loading error",
     "published": "Question published!",
+    "reveal_now": "Reveal now",
     "reset_confirm": "Reset everything? Questions and answers will be deleted.",
     "reset_done": "Game reset",
     "participants": "Participant(s)",
@@ -76,6 +105,30 @@
     "yes": "Yes",
     "no": "No",
     "footer": "UAC — Admin Panel"
+  },
+  "admin_questions": {
+    "title": "Questions - UAC",
+    "heading": "Question Bank",
+    "sub": "Add, edit or remove available questions",
+    "add": "Add question",
+    "edit": "Edit question",
+    "question_label": "Question",
+    "question_placeholder": "How many...",
+    "answer_label": "Answer (number)",
+    "answer_placeholder": "E.g.: 42",
+    "reason_label": "Explanation (optional)",
+    "reason_placeholder": "Why this answer?",
+    "save": "Save",
+    "cancel": "Cancel",
+    "list": "Questions",
+    "loading": "Loading...",
+    "empty": "No questions in the bank",
+    "added": "Question added!",
+    "updated": "Question updated!",
+    "deleted": "Question deleted",
+    "delete_confirm": "Delete this question?",
+    "error": "Loading error",
+    "footer": "UAC — Question Bank"
   },
   "errors": {
     "auth": "Authentication error. Check the logs.",
@@ -87,6 +140,7 @@
     "question_required": "Question and answer required",
     "no_round_found": "No round found",
     "not_member_title": "Access denied",
-    "not_member": "You must be a member of the UAC Discord server to log in. Join us first!"
+    "not_member": "You must be a member of the UAC Discord server to log in. Join us first!",
+    "time_up": "Time's up!"
   }
 }
