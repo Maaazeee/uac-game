@@ -1,9 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { i18nMiddleware } = require('./i18n');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,12 +38,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'uac-secret-change-me',
   resave: false,
   saveUninitialized: false,
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
 }));
+app.use(i18nMiddleware);
 
 // --- Auth middleware ---
 function requireAuth(req, res, next) {
@@ -51,7 +55,7 @@ function requireAuth(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (req.session.user && req.session.user.isAdmin) return next();
-  res.status(403).send('Accès refusé. Vous devez être admin.');
+  res.status(403).send(res.locals.t('errors.forbidden'));
 }
 
 // --- Routes ---
@@ -119,7 +123,7 @@ app.get('/callback', async (req, res) => {
     res.redirect('/games');
   } catch (err) {
     console.error('OAuth error:', err.response?.data || err.message);
-    res.send('Erreur d\'authentification. Vérifie les logs.');
+    res.send(res.locals.t('errors.auth'));
   }
 });
 
@@ -195,17 +199,17 @@ app.get('/api/state', (req, res) => {
 // Submit bet
 app.post('/api/bet', requireAuth, (req, res) => {
   const { value, reason } = req.body;
-  if (value === undefined || value === null) return res.status(400).json({ error: 'Valeur requise' });
+  if (value === undefined || value === null) return res.status(400).json({ error: res.locals.t('errors.value_required') });
   const num = parseFloat(value);
-  if (isNaN(num)) return res.status(400).json({ error: 'Valeur invalide' });
+  if (isNaN(num)) return res.status(400).json({ error: res.locals.t('errors.value_invalid') });
 
   const db = loadDB();
   const round = db.rounds[db.rounds.length - 1];
-  if (!round || round.revealed) return res.status(400).json({ error: 'Aucune manche en cours' });
+  if (!round || round.revealed) return res.status(400).json({ error: res.locals.t('errors.no_round') });
 
   // Check if user already bet
   if (round.bets.find(b => b.userId === req.session.user.id)) {
-    return res.status(400).json({ error: 'Tu as déjà voté !' });
+    return res.status(400).json({ error: res.locals.t('errors.already_bet') });
   }
 
   round.bets.push({
@@ -226,7 +230,7 @@ app.post('/api/bet', requireAuth, (req, res) => {
 // Set new round
 app.post('/api/admin/question', requireAuth, requireAdmin, (req, res) => {
   const { question, answer, reason, contextImg } = req.body;
-  if (!question || answer === undefined) return res.status(400).json({ error: 'Question et réponse requises' });
+  if (!question || answer === undefined) return res.status(400).json({ error: res.locals.t('errors.question_required') });
 
   const db = loadDB();
   const round = {
@@ -250,7 +254,7 @@ app.post('/api/admin/question', requireAuth, requireAdmin, (req, res) => {
 app.post('/api/admin/reveal', requireAuth, requireAdmin, (req, res) => {
   const db = loadDB();
   const round = db.rounds[db.rounds.length - 1];
-  if (!round) return res.status(400).json({ error: 'Aucune manche' });
+  if (!round) return res.status(400).json({ error: res.locals.t('errors.no_round_found') });
 
   round.revealed = true;
   saveDB(db);

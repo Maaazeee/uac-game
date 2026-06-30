@@ -1,19 +1,24 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>" dir="<%= dir %>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UAC - Le Prix est Juste</title>
-
+<title><%= t('game.title') %></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
 .top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
 .logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
-.logo img{height:32px;width:auto}
 .logo span{color:#c084fc}
-.logo small{font-size:12px;font-weight:400;color:#888;margin-left:8px}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
 .user-info{display:flex;align-items:center;gap:10px;font-size:13px}
 .user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #7c3aed}
 .user-info a{color:#f04747;text-decoration:none;font-size:12px}
@@ -49,18 +54,28 @@ body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:
 @keyframes spin{to{transform:rotate(360deg)}}
 footer{text-align:center;padding:30px;color:#555;font-size:13px}
 @media(max-width:500px){.bet-row{flex-direction:column}}
+[dir="rtl"] .game-card{text-align:right}
+[dir="rtl"] .bet-row{flex-direction:row-reverse}
 </style>
 </head>
 <body>
 
 <div class="top-bar">
-  <div style="display:flex;align-items:center;gap:12px"><div class="logo"><span>UAC</span></div><a href="/games" style="color:#888;font-size:13px;text-decoration:none">← Mes jeux</a></div>
+  <div class="top-left">
+    <div class="logo"><span>UAC</span></div>
+    <div class="nav-links">
+      <a href="/games" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
   <div class="user-info">
     <% if (locals.user) { %>
       <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
       <span><%= user.globalName %></span>
       <% if (user.isAdmin) { %><span style="color:#a855f7;font-size:11px">(admin)</span><% } %>
-      <a href="/logout">Déconnexion</a>
+      <a href="/logout"><%= t('nav.logout') %></a>
     <% } %>
   </div>
 </div>
@@ -69,56 +84,52 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
   <div id="app">
     <div v-if="loading" class="waiting">
       <div class="spinner"></div>
-      <p>Chargement...</p>
+      <p>{{ translations.loading }}</p>
     </div>
 
     <div v-if="!loading && !currentRound">
       <div class="game-card" style="text-align:center;padding:40px">
         <div style="font-size:48px;margin-bottom:12px">🎯</div>
-        <h2 style="margin-bottom:8px">En attente d'une question</h2>
-        <p style="color:#888">L'admin n'a pas encore posé de question. Reviens plus tard !</p>
+        <h2 style="margin-bottom:8px">{{ translations.waiting_title }}</h2>
+        <p style="color:#888">{{ translations.waiting_desc }}</p>
       </div>
     </div>
 
     <div v-if="currentRound && !loading">
-      <!-- Question -->
       <div class="game-card">
-        <div class="label">Question du jour</div>
+        <div class="label">{{ translations.question_label }}</div>
         <div class="question">{{ currentRound.question }}</div>
         <img v-if="currentRound.contextImg" :src="currentRound.contextImg" style="max-width:100%;border-radius:8px;margin-top:8px">
       </div>
 
-      <!-- Answer revealed -->
       <div v-if="currentRound.revealed && currentRound.answer !== null" class="answer-reveal">
-        <div class="label" style="margin-bottom:4px">Réponse</div>
+        <div class="label" style="margin-bottom:4px">{{ translations.answer_label }}</div>
         <div class="big">{{ currentRound.answer }}</div>
         <div v-if="currentRound.reason" class="sub">{{ currentRound.reason }}</div>
       </div>
 
-      <!-- Bet form (only if not revealed) -->
       <div v-if="!currentRound.revealed" class="game-card">
-        <div class="label" style="margin-bottom:8px">Ton estimation</div>
+        <div class="label" style="margin-bottom:8px">{{ translations.bet_label }}</div>
         <div id="error-msg" class="alert alert-error" v-if="error" style="display:none">{{ error }}</div>
-        <div id="success-msg" class="alert alert-success" v-if="betSuccess" style="display:none">✅ Réponse envoyée !</div>
+        <div id="success-msg" class="alert alert-success" v-if="betSuccess" style="display:none">✅ {{ translations.bet_success }}</div>
         <div class="bet-row">
-          <input type="number" id="bet-value" placeholder="Nombre..." min="0" step="any">
-          <button class="btn btn-green" onclick="submitBet()">🚀 Envoyer</button>
+          <input type="number" id="bet-value" :placeholder="translations.bet_placeholder" min="0" step="any">
+          <button class="btn btn-green" onclick="submitBet()">🚀 <%= t('game.bet_send') %></button>
         </div>
-        <textarea id="bet-reason" placeholder="Explique ton raisonnement (optionnel)" style="margin-top:8px"></textarea>
+        <textarea id="bet-reason" :placeholder="translations.bet_reason_placeholder" style="margin-top:8px"></textarea>
       </div>
 
-      <!-- Bets list -->
       <div v-if="bets.length > 0" class="bet-list">
         <div class="label" style="margin-bottom:8px;text-align:center">
-          {{ currentRound.revealed ? '🏆 Résultats' : '📊 En attente des réponses...' }}
-          ({{ bets.length }} participant(s))
+          {{ currentRound.revealed ? '🏆 ' + translations.results : '📊 ' + translations.waiting_bets }}
+          ({{ bets.length }} {{ translations.participants }})
         </div>
 
         <div v-for="(b, i) in sortedBets" class="bet-item" :style="i === 0 && currentRound.revealed ? 'border-color:#43b581;background:#43b5810d' : ''">
           <img v-if="b.avatar && currentRound.revealed" :src="'https://cdn.discordapp.com/avatars/' + b.userId + '/' + b.avatar + '.png'" class="avatar">
           <div v-if="!b.avatar || !currentRound.revealed" class="avatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">?</div>
           <div class="name">
-            {{ currentRound.revealed ? b.username : 'Anonymous' }}
+            {{ currentRound.revealed ? b.username : translations.anonymous }}
             <div v-if="b.reason" style="font-weight:400;font-size:12px;color:#888">{{ b.reason }}</div>
           </div>
           <div class="value">
@@ -133,9 +144,12 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
   </div>
 </div>
 
-<footer>UAC — Underground Algerian Community · Le Prix est Juste</footer>
+<footer><%= t('game.footer') %></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js"></script>
+<script>
+var translations = <%- JSON.stringify(locale.game || locale) %>;
+</script>
 <script>
 const app = new Vue({
   el: '#app',
@@ -144,7 +158,8 @@ const app = new Vue({
     bets: [],
     loading: true,
     error: '',
-    betSuccess: false
+    betSuccess: false,
+    translations: window.translations
   },
   computed: {
     sortedBets() {
@@ -179,7 +194,7 @@ const app = new Vue({
 async function submitBet() {
   const val = parseFloat(document.getElementById('bet-value').value);
   const reason = document.getElementById('bet-reason').value.trim();
-  if (isNaN(val)) { showError('Entre un nombre valide'); return; }
+  if (isNaN(val)) { showError(window.translations.bet_invalid || 'Entre un nombre valide'); return; }
 
   try {
     const res = await fetch('/api/bet', {
@@ -196,7 +211,7 @@ async function submitBet() {
     document.getElementById('success-msg').style.display = 'block';
     app.betSuccess = true;
     app.loadState();
-  } catch(e) { showError('Erreur réseau'); }
+  } catch(e) { showError(window.translations.bet_error || 'Erreur réseau'); }
 }
 
 function showError(msg) {

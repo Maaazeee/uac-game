@@ -1,18 +1,24 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>" dir="<%= dir %>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - UAC Prix est Juste</title>
-
+<title><%= t('admin.title') %></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0}
 .top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
 .logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
-.logo img{height:32px;width:auto}
 .logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
 .user-info{display:flex;align-items:center;gap:10px;font-size:13px}
 .user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
 .user-info a{color:#f04747;text-decoration:none;font-size:12px}
@@ -50,56 +56,63 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 <body>
 
 <div class="top-bar">
-  <div style="display:flex;align-items:center;gap:12px"><div class="logo"><span>UAC</span></div><a href="/games" style="color:#888;font-size:13px;text-decoration:none">← Mes jeux</a></div>
+  <div class="top-left">
+    <div class="logo"><span>UAC</span></div>
+    <div class="nav-links">
+      <a href="/games" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
   <div class="user-info">
     <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
     <span><%= user.globalName %></span>
-    <a href="/logout">Déconnexion</a>
+    <a href="/logout"><%= t('nav.logout') %></a>
   </div>
 </div>
 
 <div class="container">
-  <h1>⚙️ Panneau <span>Admin</span></h1>
-  <p class="sub">Configure les questions et gère le jeu</p>
+  <h1>⚙️ <%= t('admin.heading') %></h1>
+  <p class="sub"><%= t('admin.sub') %></p>
 
   <div id="error" class="alert alert-error" style="display:none"></div>
   <div id="success" class="alert alert-success" style="display:none"></div>
 
   <div class="grid">
-    <!-- New question -->
     <div class="card">
-      <h2>🎯 Nouvelle question</h2>
-      <label>Question</label>
-      <textarea id="q" placeholder="Ex: Combien de pingouins pour soulever un avion ?"></textarea>
-      <label>Réponse (nombre)</label>
-      <input type="number" id="a" placeholder="Ex: 42" step="any">
-      <label>Explication (optionnelle)</label>
-      <textarea id="r" placeholder="Pourquoi cette réponse ?"></textarea>
-      <label>Image contexte (URL, optionnelle)</label>
-      <input type="url" id="img" placeholder="https://...">
-      <button class="btn btn-green" onclick="newQuestion()">📢 Publier la question</button>
-      <button class="btn btn-outline btn-sm" onclick="resetGame()" style="margin-top:8px">🔄 Reset tout</button>
+      <h2>🎯 <%= t('admin.new_question') %></h2>
+      <label><%= t('admin.question_label') %></label>
+      <textarea id="q" placeholder="<%= t('admin.question_placeholder') %>"></textarea>
+      <label><%= t('admin.answer_label') %></label>
+      <input type="number" id="a" placeholder="<%= t('admin.answer_placeholder') %>" step="any">
+      <label><%= t('admin.reason_label') %></label>
+      <textarea id="r" placeholder="<%= t('admin.reason_placeholder') %>"></textarea>
+      <label><%= t('admin.image_label') %></label>
+      <input type="url" id="img" placeholder="<%= t('admin.image_placeholder') %>">
+      <button class="btn btn-green" onclick="newQuestion()">📢 <%= t('admin.publish') %></button>
+      <button class="btn btn-outline btn-sm" onclick="resetGame()" style="margin-top:8px">🔄 <%= t('admin.reset') %></button>
     </div>
 
-    <!-- Current state -->
     <div class="card">
-      <h2>📊 État actuel</h2>
+      <h2>📊 <%= t('admin.current_state') %></h2>
       <div id="state">
-        <p style="color:#888;font-size:13px">Chargement...</p>
+        <p style="color:#888;font-size:13px"><%= t('admin.loading') %></p>
       </div>
     </div>
   </div>
 
-  <!-- History -->
   <div class="card" style="margin-top:16px">
-    <h2>📜 Historique</h2>
-    <div id="history"><p style="color:#888;font-size:13px">Chargement...</p></div>
+    <h2>📜 <%= t('admin.history') %></h2>
+    <div id="history"><p style="color:#888;font-size:13px"><%= t('admin.loading') %></p></div>
   </div>
 </div>
 
-<footer>UAC — Panneau d'administration</footer>
+<footer><%= t('admin.footer') %></footer>
 
 <script>
+var translations = <%- JSON.stringify(locale.admin || locale) %>;
+
 async function api(url, opts = {}) {
   const res = await fetch(url, opts);
   const data = await res.json();
@@ -124,14 +137,14 @@ async function newQuestion() {
   const answer = parseFloat(document.getElementById('a').value);
   const reason = document.getElementById('r').value.trim();
   const contextImg = document.getElementById('img').value.trim();
-  if (!question || isNaN(answer)) { showError('Question et réponse requises'); return; }
+  if (!question || isNaN(answer)) { showError(window.translations.question_required || 'Question et réponse requises'); return; }
   try {
     await api('/api/admin/question', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, answer, reason, contextImg })
     });
-    showSuccess('✅ Question publiée !');
+    showSuccess('✅ ' + (window.translations.published || 'Question publiée !'));
     document.getElementById('q').value = '';
     document.getElementById('a').value = '';
     document.getElementById('r').value = '';
@@ -142,7 +155,7 @@ async function newQuestion() {
 }
 
 async function resetGame() {
-  if (!confirm('Tout réinitialiser ? Les questions et réponses seront supprimées.')) return;
+  if (!confirm(window.translations.reset_confirm || 'Tout réinitialiser ?')) return;
   try {
     await fetch('/api/admin/question', {
       method: 'POST',
@@ -153,7 +166,7 @@ async function resetGame() {
         reason: 'Réinitialisation'
       })
     });
-    showSuccess('✅ Jeu réinitialisé');
+    showSuccess('✅ ' + (window.translations.reset_done || 'Jeu réinitialisé'));
     loadState(); loadHistory();
   } catch(e) { showError(e.message); }
 }
@@ -163,17 +176,21 @@ async function loadState() {
     const data = await api('/api/state');
     const el = document.getElementById('state');
     if (data.round) {
+      var participantsLabel = window.translations.participants || 'Participant(s)';
+      var revealedLabel = window.translations.revealed || 'Révélé';
+      var yesLabel = window.translations.yes || 'Oui';
+      var noLabel = window.translations.no || 'Non';
       el.innerHTML = `
         <div style="font-size:14px;font-weight:700;margin-bottom:4px">${data.round.question}</div>
         <div style="color:#888;font-size:12px">Réponse: <span style="color:#ffd700;font-weight:700">${data.round.answer !== null ? data.round.answer : '?'}</span></div>
-        <div style="color:#888;font-size:12px">Participants: ${data.bets.length}</div>
-        <div style="color:#888;font-size:12px">Révélé: ${data.round.revealed ? '✅ Oui' : '❌ Non'}</div>
+        <div style="color:#888;font-size:12px">${participantsLabel}: ${data.bets.length}</div>
+        <div style="color:#888;font-size:12px">${revealedLabel}: ${data.round.revealed ? '✅ ' + yesLabel : '❌ ' + noLabel}</div>
       `;
     } else {
-      el.innerHTML = '<p style="color:#888">Aucune question en cours</p>';
+      el.innerHTML = '<p style="color:#888">' + (window.translations.no_round || 'Aucune question en cours') + '</p>';
     }
   } catch(e) {
-    document.getElementById('state').innerHTML = '<p style="color:#f04747">Erreur de chargement</p>';
+    document.getElementById('state').innerHTML = '<p style="color:#f04747">' + (window.translations.error || 'Erreur de chargement') + '</p>';
   }
 }
 
@@ -181,7 +198,7 @@ async function loadHistory() {
   try {
     const data = await api('/api/admin/history');
     const el = document.getElementById('history');
-    if (data.length === 0) { el.innerHTML = '<p style="color:#888">Aucun historique</p>'; return; }
+    if (data.length === 0) { el.innerHTML = '<p style="color:#888">' + (window.translations.history_empty || 'Aucun historique') + '</p>'; return; }
     el.innerHTML = data.map(r => `
       <div class="history-item">
         <div class="q">${r.question}</div>
@@ -189,7 +206,7 @@ async function loadHistory() {
       </div>
     `).join('');
   } catch(e) {
-    document.getElementById('history').innerHTML = '<p style="color:#f04747">Erreur</p>';
+    document.getElementById('history').innerHTML = '<p style="color:#f04747">' + (window.translations.error || 'Erreur') + '</p>';
   }
 }
 
