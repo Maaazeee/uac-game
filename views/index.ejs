@@ -9,63 +9,56 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column}
 .top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#fff}
+.logo svg{width:28px;height:28px}
 .logo span{color:#c084fc}
-.logo small{font-size:12px;font-weight:400;color:#888;margin-left:8px}
+.nav-links{display:flex;gap:16px}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
 .hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center}
-.hero h1{font-size:48px;font-weight:900;margin-bottom:4px;background:linear-gradient(135deg,#c084fc,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero .tagline{font-size:14px;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:3px;margin-bottom:8px}
-.hero p{font-size:16px;color:#aaa;max-width:550px;margin-bottom:8px;line-height:1.7}
-.hero .sub{font-size:14px;color:#777;margin-bottom:28px}
+.server-icon{width:96px;height:96px;border-radius:24px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#fff;margin-bottom:20px;box-shadow:0 8px 32px rgba(124,58,237,.3)}
+.hero h1{font-size:40px;font-weight:900;margin-bottom:8px}
+.hero h1 span{background:linear-gradient(135deg,#c084fc,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:16px;color:#aaa;max-width:480px;line-height:1.7;margin-bottom:6px}
+.hero .stats{display:flex;gap:24px;margin:20px 0 28px;font-size:13px;color:#888}
+.hero .stats strong{display:block;font-size:20px;color:#c084fc;font-weight:900}
 .btn{display:inline-flex;align-items:center;gap:10px;background:#5865f2;color:#fff;border:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:16px;cursor:pointer;transition:.2s;text-decoration:none}
 .btn:hover{background:#4752c4;transform:translateY(-2px)}
-.btn-primary{background:#a855f7}
-.btn-primary:hover{background:#9333ea}
 .btn-outline{background:transparent;border:2px solid #a855f7;color:#a855f7}
 .btn-outline:hover{background:#a855f733}
 .buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.section{padding:40px 24px;max-width:700px;margin:0 auto;text-align:center}
-.section h2{font-size:22px;font-weight:800;margin-bottom:12px}
-.section h2 span{color:#c084fc}
-.section p{color:#aaa;font-size:15px;line-height:1.6;margin-bottom:16px}
-.game-preview{background:#16213e;border-radius:12px;padding:28px;border:1px solid #1e2a4a;margin-top:16px;text-align:left;display:flex;align-items:center;gap:20px}
-.game-preview .icon{font-size:48px;flex-shrink:0}
-.game-preview .info{flex:1}
-.game-preview .info h3{font-size:18px;font-weight:700;margin-bottom:4px}
-.game-preview .info p{font-size:13px;color:#888;margin:0}
 footer{text-align:center;padding:24px;color:#555;font-size:13px}
-@media(max-width:500px){.hero h1{font-size:32px}.buttons{flex-direction:column}.game-preview{flex-direction:column;text-align:center}}
 </style>
 </head>
 <body>
 
 <div class="top-bar">
-  <div class="logo"><span>UAC</span> <small>Underground Algerian Community</small></div>
+  <div class="top-left">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span>UAC</span>
+    </div>
+    <div class="nav-links">
+      <a href="/games">Jeux</a>
+    </div>
+  </div>
 </div>
 
 <div class="hero">
-  <div class="tagline">Serveur Discord</div>
-  <h1>Underground Algerian Community</h1>
-  <p>Une communauté algérienne passionnée par la tech, les jeux et les défis.</p>
-  <p class="sub">Rejoins des centaines de membres et participe à nos événements exclusifs.</p>
+  <div class="server-icon">U</div>
+  <h1>Underground <span>Algerian Community</span></h1>
+  <p>Le serveur Discord des algériens passionnés de tech, gaming et culture. Rejoins une communauté active et participe à nos défis exclusifs.</p>
+  <div class="stats">
+    <div><strong>+200</strong> Membres</div>
+    <div><strong>+10</strong> Défis</div>
+    <div><strong>#1</strong> Commu ALG</div>
+  </div>
   <div class="buttons">
     <a href="/login" class="btn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
       Connexion membres
     </a>
-    <a href="https://discord.gg/uac" class="btn btn-outline" target="_blank">Rejoindre le serveur</a>
-  </div>
-</div>
-
-<div class="section">
-  <h2>🎮 Activité du moment</h2>
-  <p>Les membres du serveur s'affrontent dans des défis quotidiens.</p>
-  <div class="game-preview">
-    <div class="icon">🎯</div>
-    <div class="info">
-      <h3>Le Prix est Juste</h3>
-      <p>Un nombre, une question, des centaines de réponses. Soyez le plus proche pour gagner ! Connecte-toi pour participer à la prochaine manche.</p>
-    </div>
   </div>
 </div>
 
