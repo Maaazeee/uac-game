@@ -85,6 +85,7 @@
     "no_round": "Aucune manche en cours",
     "already_bet": "Tu as déjà voté !",
     "question_required": "Question et réponse requises",
-    "no_round_found": "Aucune manche"
+    "no_round_found": "Aucune manche",
+    "not_member": "Tu dois être membre du serveur Discord UAC pour te connecter. Rejoins-nous d'abord !"
   }
 }

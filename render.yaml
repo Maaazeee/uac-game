@@ -19,3 +19,5 @@ services:
         generateValue: true
       - key: ADMIN_USERNAME
         value: maaazeeee
+      - key: GUILD_ID
+        value: 1397699831568400506

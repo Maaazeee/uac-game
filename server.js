@@ -30,6 +30,7 @@ const ADMINS = (process.env.ADMINS || process.env.ADMIN_USERNAME || '').split(',
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/callback`;
+const GUILD_ID = process.env.GUILD_ID || '';
 
 // --- Middleware ---
 app.use(express.json());
@@ -63,7 +64,7 @@ function requireAdmin(req, res, next) {
 // Login - redirect to Discord
 app.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/games');
-  const url = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify`;
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20guilds`;
   res.redirect(url);
 });
 
@@ -88,6 +89,18 @@ app.get('/callback', async (req, res) => {
     });
 
     const discordUser = userRes.data;
+
+    // Check guild membership
+    if (GUILD_ID) {
+      const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
+        headers: { Authorization: `Bearer ${tokenRes.data.access_token}` }
+      });
+      const memberOfGuild = guildsRes.data.some(g => g.id === GUILD_ID);
+      if (!memberOfGuild) {
+        return res.send(res.locals.t('errors.not_member'));
+      }
+    }
+
     const db = loadDB();
     let user = db.users.find(u => u.id === discordUser.id);
 
