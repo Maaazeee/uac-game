@@ -97,7 +97,7 @@ app.get('/callback', async (req, res) => {
       });
       const memberOfGuild = guildsRes.data.some(g => g.id === GUILD_ID);
       if (!memberOfGuild) {
-        return res.send(res.locals.t('errors.not_member'));
+        return res.render('not-member');
       }
     }
 
