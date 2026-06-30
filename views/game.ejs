@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UAC - Le Prix est Juste</title>
-<link rel="icon" href="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png">
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -54,7 +54,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 <body>
 
 <div class="top-bar">
-  <div class="logo"><img src="file:///C:/Users/debor/OneDrive/Images/1000037199-removebg-preview.png"> UAC <small>Underground Algerian Community</small></div>
+  <div style="display:flex;align-items:center;gap:12px"><div class="logo"><span>UAC</span></div><a href="/games" style="color:#888;font-size:13px;text-decoration:none">← Mes jeux</a></div>
   <div class="user-info">
     <% if (locals.user) { %>
       <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">

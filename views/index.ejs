@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAC - Underground Algerian Community</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.logo small{font-size:12px;font-weight:400;color:#888;margin-left:8px}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center}
+.hero h1{font-size:48px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#c084fc,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:#aaa;max-width:500px;margin-bottom:32px;line-height:1.6}
+.btn{display:inline-flex;align-items:center;gap:10px;background:#5865f2;color:#fff;border:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:16px;cursor:pointer;transition:.2s;text-decoration:none}
+.btn:hover{background:#4752c4;transform:translateY(-2px)}
+.btn-primary{background:#a855f7}
+.btn-primary:hover{background:#9333ea}
+.features{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;margin-top:40px;max-width:700px}
+.feature{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a;flex:1;min-width:180px;text-align:center}
+.feature .icon{font-size:32px;margin-bottom:8px}
+.feature h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.feature p{font-size:12px;color:#888}
+footer{text-align:center;padding:24px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo"><span>UAC</span> <small>Underground Algerian Community</small></div>
+</div>
+
+<div class="hero">
+  <h1>Le Prix est Juste</h1>
+  <p>Devine le nombre le plus proche de la réponse et gagne !<br>Connecte-toi avec Discord pour participer.</p>
+  <a href="/login" class="btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+    Connexion avec Discord
+  </a>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">🎯</div>
+      <h3>Devine le juste prix</h3>
+      <p>Estime un nombre au plus proche de la réponse</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🏆</div>
+      <h3>Classement</h3>
+      <p>Les meilleures réponses sont mises en avant</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔒</div>
+      <h3>Anonyme</h3>
+      <p>Les noms sont cachés jusqu'à la révélation</p>
+    </div>
+  </div>
+</div>
+
+<footer>UAC — Underground Algerian Community</footer>
+
+</body>
+</html>

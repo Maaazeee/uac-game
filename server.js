@@ -24,9 +24,9 @@ function saveDB(db) {
 if (!fs.existsSync(DB_PATH)) saveDB(loadDB());
 
 // --- Config ---
-const ADMINS = (process.env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
-const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const ADMINS = (process.env.ADMINS || process.env.ADMIN_USERNAME || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/callback`;
 
 // --- Middleware ---
@@ -58,7 +58,7 @@ function requireAdmin(req, res, next) {
 
 // Login - redirect to Discord
 app.get('/login', (req, res) => {
-  if (req.session.user) return res.redirect(req.session.user.isAdmin ? '/admin' : '/game');
+  if (req.session.user) return res.redirect('/games');
   const url = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify`;
   res.redirect(url);
 });
@@ -116,7 +116,7 @@ app.get('/callback', async (req, res) => {
       isAdmin: user.isAdmin
     };
 
-    res.redirect(user.isAdmin ? '/admin' : '/game');
+    res.redirect('/games');
   } catch (err) {
     console.error('OAuth error:', err.response?.data || err.message);
     res.send('Erreur d\'authentification. Vérifie les logs.');
@@ -126,7 +126,7 @@ app.get('/callback', async (req, res) => {
 // Logout
 app.get('/logout', (req, res) => {
   req.session.destroy();
-  res.redirect('/login');
+  res.redirect('/');
 });
 
 // --- Pages ---
@@ -148,10 +148,15 @@ app.get('/admin', requireAuth, requireAdmin, (req, res) => {
   });
 });
 
-// Root redirect
+// Homepage
 app.get('/', (req, res) => {
-  if (req.session.user) return res.redirect(req.session.user.isAdmin ? '/admin' : '/game');
-  res.redirect('/login');
+  if (req.session.user) return res.redirect('/games');
+  res.render('index');
+});
+
+// Games hub
+app.get('/games', requireAuth, (req, res) => {
+  res.render('games', { user: req.session.user });
 });
 
 // --- API ---
