@@ -203,6 +203,19 @@
     "players_join_first": "Players must join first",
     "footer": "UAC — Admin Impostor"
   },
+  "profile": {
+    "title": "Profile - UAC",
+    "back": "← My games",
+    "total_bets": "Bets",
+    "wins": "Wins",
+    "points": "Points",
+    "best_rank": "Best rank",
+    "impostor_games": "Impostor games",
+    "impostor_wins": "Impostor wins",
+    "history": "History",
+    "no_history": "No games played yet",
+    "footer": "UAC — My Profile"
+  },
   "errors": {
     "auth": "Authentication error. Check the logs.",
     "forbidden": "Access denied. You must be an admin.",

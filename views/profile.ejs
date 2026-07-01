@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= t('profile.title') %></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;min-height:100vh}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;color:#fff}
+.logo svg{width:28px;height:28px}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #7c3aed}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:650px;margin:0 auto;padding:32px 16px}
+h1{font-size:24px;font-weight:900;margin-bottom:4px}
+.sub{color:#888;font-size:14px;margin-bottom:24px}
+.profile-header{text-align:center;margin-bottom:32px}
+.profile-header img{width:80px;height:80px;border-radius:50%;border:3px solid #a855f7;margin-bottom:12px}
+.profile-header h1{font-size:22px}
+.profile-header .tag{color:#888;font-size:13px;margin-top:4px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:32px}
+.stat-card{background:#16213e;border:1px solid #1e2a4a;border-radius:12px;padding:16px;text-align:center;transition:.2s}
+.stat-card:hover{border-color:#7c3aed}
+.stat-card .num{font-size:28px;font-weight:900;color:#c084fc}
+.stat-card .label{font-size:12px;color:#888;margin-top:4px}
+.section-title{font-size:18px;font-weight:800;margin-bottom:12px;margin-top:32px;color:#e0e0e0}
+.game-card{background:#16213e;border:1px solid #1e2a4a;border-radius:12px;padding:16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.game-card .q{font-size:14px;font-weight:600;flex:1;text-align:left}
+.game-card .meta{text-align:right;font-size:12px;color:#888;flex-shrink:0}
+.game-card .meta .rank-badge{display:inline-block;background:#a855f722;color:#a855f7;padding:2px 8px;border-radius:6px;font-weight:700;font-size:13px}
+.game-card .meta .rank-badge.gold{background:#ffd70022;color:#ffd700}
+.game-card .meta .rank-badge.silver{background:#c0c0c022;color:#c0c0c0}
+.game-card .meta .rank-badge.bronze{background:#cd7f3222;color:#cd7f32}
+.empty{text-align:center;color:#888;padding:24px;font-size:14px}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:#c084fc;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:16px;transition:.2s}
+.back-link:hover{color:#a855f7}
+footer{text-align:center;padding:24px;color:#555;font-size:13px}
+[dir="rtl"] .game-card .q{text-align:right}
+[dir="rtl"] .game-card .meta{text-align:left}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+      <span>UAC</span>
+    </div>
+    <div class="nav-links">
+      <a href="/games"><%= t('nav.games') %></a>
+      <a href="/leaderboard"><%= t('nav.leaderboard') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
+  <div class="user-info">
+    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+    <span><%= user.globalName || user.username %></span>
+    <a href="/logout"><%= t('nav.logout') %></a>
+  </div>
+</div>
+
+<div class="container">
+  <a href="/games" class="back-link">← <%= t('profile.back') %></a>
+
+  <div class="profile-header">
+    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+    <h1><%= user.globalName || user.username %></h1>
+    <div class="tag">@<%= user.username %></div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="num"><%= stats.totalBets %></div>
+      <div class="label"><%= t('profile.total_bets') %></div>
+    </div>
+    <div class="stat-card">
+      <div class="num"><%= stats.wins %></div>
+      <div class="label"><%= t('profile.wins') %></div>
+    </div>
+    <div class="stat-card">
+      <div class="num"><%= stats.points %></div>
+      <div class="label"><%= t('profile.points') %></div>
+    </div>
+    <div class="stat-card">
+      <div class="num"><%= stats.bestRank ? '#' + stats.bestRank : '-' %></div>
+      <div class="label"><%= t('profile.best_rank') %></div>
+    </div>
+    <div class="stat-card">
+      <div class="num"><%= stats.impostorGames %></div>
+      <div class="label"><%= t('profile.impostor_games') %></div>
+    </div>
+    <div class="stat-card">
+      <div class="num"><%= stats.impostorWins %></div>
+      <div class="label"><%= t('profile.impostor_wins') %></div>
+    </div>
+  </div>
+
+  <h2 class="section-title"><%= t('profile.history') %></h2>
+  <% if (stats.gameHistory.length === 0) { %>
+    <div class="empty"><%= t('profile.no_history') %></div>
+  <% } %>
+  <% stats.gameHistory.slice(-20).reverse().forEach(function(g) { %>
+    <div class="game-card">
+      <div class="q"><%= g.question %></div>
+      <div class="meta">
+        <div>
+          <% if (g.rank === 1) { %><span class="rank-badge gold">#<%= g.rank %></span>
+          <% } else if (g.rank === 2) { %><span class="rank-badge silver">#<%= g.rank %></span>
+          <% } else if (g.rank === 3) { %><span class="rank-badge bronze">#<%= g.rank %></span>
+          <% } else { %><span class="rank-badge">#<%= g.rank %></span><% } %>
+          /<%= g.total %>
+        </div>
+        <div style="margin-top:4px"><%= g.value %> → <%= g.answer %></div>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<footer><%= t('profile.footer') %></footer>
+</body>
+</html>

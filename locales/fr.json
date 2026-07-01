@@ -203,6 +203,19 @@
     "players_join_first": "Les joueurs doivent rejoindre",
     "footer": "UAC — Admin Imposteur"
   },
+  "profile": {
+    "title": "Profil - UAC",
+    "back": "← Mes jeux",
+    "total_bets": "Paris",
+    "wins": "Victoires",
+    "points": "Points",
+    "best_rank": "Meilleur rang",
+    "impostor_games": "Parties Imposteur",
+    "impostor_wins": "Gagnées Imposteur",
+    "history": "Historique",
+    "no_history": "Aucune partie jouée pour le moment",
+    "footer": "UAC — Mon Profil"
+  },
   "errors": {
     "auth": "Erreur d'authentification. Vérifie les logs.",
     "forbidden": "Accès refusé. Vous devez être admin.",

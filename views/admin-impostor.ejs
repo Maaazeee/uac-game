@@ -80,8 +80,8 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
     </div>
   </div>
   <div class="user-info">
-    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
-    <span><%= user.globalName %></span>
+    <a href="/profile"><img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt=""></a>
+    <a href="/profile" style="color:#e0e0e0;text-decoration:none"><span><%= user.globalName %></span></a>
     <a href="/logout"><%= t('nav.logout') %></a>
   </div>
 </div>

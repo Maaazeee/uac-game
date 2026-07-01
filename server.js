@@ -181,6 +181,55 @@ app.get('/games', requireAuth, (req, res) => {
   res.render('games', { user: req.session.user });
 });
 
+// Profile page
+app.get('/profile', requireAuth, (req, res) => {
+  const db = loadDB();
+  const userId = req.session.user.id;
+  const rounds = db.rounds || [];
+  const impostorRounds = db.impostorRounds || [];
+
+  // Le Prix est Juste stats
+  let totalBets = 0, wins = 0, points = 0, bestRank = null;
+  const gameHistory = [];
+  for (const r of rounds) {
+    if (!r.revealed || !r.bets) continue;
+    const sorted = [...r.bets].sort((a, b) => {
+      const da = Math.abs(a.value - r.answer);
+      const db2 = Math.abs(b.value - r.answer);
+      if (da !== db2) return da - db2;
+      if (a.value <= r.answer && b.value > r.answer) return -1;
+      if (a.value > r.answer && b.value <= r.answer) return 1;
+      return 0;
+    });
+    const idx = sorted.findIndex(b => b.userId === userId);
+    if (idx !== -1) {
+      totalBets++;
+      gameHistory.push({ question: r.question, value: sorted[idx].value, answer: r.answer, rank: idx + 1, total: sorted.length, createdAt: r.createdAt });
+      if (idx === 0) { wins++; points += 3; }
+      else if (idx === 1) points += 2;
+      else if (idx === 2) points += 1;
+      if (bestRank === null || idx + 1 < bestRank) bestRank = idx + 1;
+    }
+  }
+
+  // Impostor stats
+  let impostorGames = 0, impostorWins = 0, impostorAssignments = 0;
+  for (const ir of impostorRounds) {
+    if (ir.phase !== 'revealed' || !ir.players) continue;
+    const player = ir.players[userId];
+    if (!player) continue;
+    impostorGames++;
+    if (player.isImpostor) impostorAssignments++;
+    if (ir.winner === 'impostor' && player.isImpostor) impostorWins++;
+    if (ir.winner === 'players' && !player.isImpostor) impostorWins++;
+  }
+
+  res.render('profile', {
+    user: req.session.user,
+    stats: { totalBets, wins, points, bestRank, gameHistory, impostorGames, impostorWins, impostorAssignments }
+  });
+});
+
 // --- API ---
 
 // Auto-reveal helper: check deadline
