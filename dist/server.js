@@ -153,7 +153,15 @@ function sanitize(str) {
 // --- Socket.io ---
 io.on('connection', (socket) => {
     logger_1.default.debug({ socketId: socket.id }, 'Socket connected');
+    socket.on('disconnect', () => {
+        logger_1.default.debug({ socketId: socket.id }, 'Socket disconnected');
+    });
 });
+// Emit socket count periodically
+setInterval(() => {
+    const count = io.engine.clientsCount;
+    io.emit('socketCount', count);
+}, 5000);
 // --- Routes ---
 app.get('/login', (req, res) => {
     if (req.session.user)
@@ -204,6 +212,14 @@ app.get('/profile', requireAuth, (req, res, next) => {
         const userId = req.session.user.id;
         const jpStats = db.getUserStats(userId);
         const impStats = db.getImpostorStats(userId);
+        // Compute win streak (consecutive 1st places from most recent)
+        let winStreak = 0;
+        for (const g of jpStats.gameHistory.slice().reverse()) {
+            if (g.rank === 1)
+                winStreak++;
+            else
+                break;
+        }
         const badges = [];
         if (jpStats.wins >= 1)
             badges.push('first_win');
@@ -221,7 +237,9 @@ app.get('/profile', requireAuth, (req, res, next) => {
             badges.push('master_impostor');
         if (jpStats.top3Count >= 10)
             badges.push('top3_10');
-        res.render('profile', { user: req.session.user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count }, badges });
+        if (winStreak >= 3)
+            badges.push('hot_streak');
+        res.render('profile', { user: req.session.user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, badges });
     }
     catch (err) {
         next(err);

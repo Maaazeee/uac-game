@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><%= t('admin.title') %></title>
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
@@ -196,11 +197,15 @@ async function resetGame() {
 }
 
 async function revealNow() {
+  if (!confirm(window.translations.reveal_confirm || 'Révéler maintenant ? Les résultats seront visibles par tous.')) return;
+  var btn = document.getElementById('reveal-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
   try {
     await api('/api/admin/reveal', { method: 'POST' });
     showSuccess('✅ ' + (window.translations.revealed || 'Révélé !'));
     loadState(); loadHistory();
   } catch(e) { showError(e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '🔓 ' + (window.translations.reveal_now || 'Révéler maintenant'); } }
 }
 
 async function loadState() {
@@ -214,13 +219,14 @@ async function loadState() {
       var noLabel = window.translations.no || 'Non';
       var revealBtn = '';
       if (!data.round.revealed && data.round.deadline) {
-        revealBtn = '<button class="btn btn-sm" onclick="revealNow()" style="margin-top:8px">🔓 ' + (window.translations.reveal_now || 'Révéler maintenant') + '</button>';
+        revealBtn = '<button class="btn btn-sm" id="reveal-btn" onclick="revealNow()" style="margin-top:8px">🔓 ' + (window.translations.reveal_now || 'Révéler maintenant') + '</button>';
       }
       el.innerHTML = `
         <div style="font-size:14px;font-weight:700;margin-bottom:4px">${data.round.question}</div>
         <div style="color:#888;font-size:12px">Réponse: <span style="color:#ffd700;font-weight:700">${data.round.answer !== null ? data.round.answer : '?'}</span></div>
         <div style="color:#888;font-size:12px">${participantsLabel}: ${data.bets.length}</div>
         <div style="color:#888;font-size:12px">${revealedLabel}: ${data.round.revealed ? '✅ ' + yesLabel : '❌ ' + noLabel}</div>
+        <div style="color:#888;font-size:12px;margin-top:4px">👥 Connectés: <span id="socket-count">?</span></div>
         ${revealBtn}
       `;
     } else {
@@ -249,6 +255,13 @@ async function loadHistory() {
 
 loadState(); loadHistory();
 setInterval(loadState, 5000);
+
+// Socket count tracking
+var adminSocket = io();
+adminSocket.on('socketCount', function(count) {
+  var el = document.getElementById('socket-count');
+  if (el) el.textContent = count;
+});
 </script>
 </body>
 </html>

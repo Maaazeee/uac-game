@@ -158,6 +158,12 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
         <div class="sub" style="margin-top:6px;font-size:12px;color:#888;border-top:1px solid #2a2a4a;padding-top:8px">
           ⚖️ {{ translations.tiebreaker_rule }}
         </div>
+        <!-- Fun stats -->
+        <div v-if="funStats" class="sub" style="margin-top:8px;font-size:12px;background:#0f0f1a;border-radius:8px;padding:8px 12px;border:1px solid #2a2a4a">
+          <div v-if="funStats.closestUnder">🎯 {{ funStats.closestUnder }}</div>
+          <div v-if="funStats.closest">📏 {{ funStats.closest }}</div>
+          <div v-if="funStats.worst">🐌 {{ funStats.worst }}</div>
+        </div>
       </div>
 
       <!-- Bet form (only if not revealed, deadline not passed, and user hasn't bet) -->
@@ -223,7 +229,9 @@ var app = new Vue({
     translations: window.translations,
     remaining: 0,
     timerInterval: null,
-    wasRevealed: false
+    wasRevealed: false,
+    wasNotRevealed: false,
+    funStats: null
   },
   computed: {
     sortedBets() {
@@ -260,13 +268,26 @@ var app = new Vue({
         this.bets = data.bets || [];
         this.userAlreadyBet = data.userAlreadyBet || false;
         this.loading = false;
+        // Dynamic title
+        this.updateTitle(data);
         // Detect reveal transition
         if (data.round && data.round.revealed && data.round.answer !== null && !this.wasRevealed) {
           this.wasRevealed = true;
+          this.funStats = this.computeFunStats(data);
           if (typeof playWin === 'function') playWin();
           if (typeof fireConfetti === 'function') fireConfetti(4000);
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+            new Notification(this.translations.round_revealed || 'Réponses dévoilées !', { body: data.round.answer + ' — ' + data.round.question });
+          }
         }
-        if (data.round && !data.round.revealed) this.wasRevealed = false;
+        if (data.round && !data.round.revealed) {
+          this.wasRevealed = false;
+          // Notify on new round
+          if (!this.wasNotRevealed && data.round.question) {
+            this.wasNotRevealed = true;
+          }
+        }
+        if (!data.round || data.round.revealed) this.wasNotRevealed = false;
         // Start timer if deadline exists
         if (data.round && data.round.deadline) {
           this.updateRemaining(data.round.deadline);
@@ -301,15 +322,54 @@ var app = new Vue({
       const maxDiff = Math.max(...this.bets.map(b => Math.abs(b.value - this.currentRound.answer)));
       if (maxDiff === 0) return 100;
       return Math.max(5, 100 - (diff / maxDiff) * 100);
+    },
+    computeFunStats(data) {
+      if (!data.round || data.round.answer === null || !data.bets.length) return null;
+      const answer = data.round.answer;
+      const b = [...data.bets];
+      b.sort((a, bb) => {
+        const da = Math.abs(a.value - answer);
+        const db = Math.abs(bb.value - answer);
+        if (da !== db) return da - db;
+        if (a.value <= answer && bb.value > answer) return -1;
+        if (a.value > answer && bb.value <= answer) return 1;
+        return 0;
+      });
+      const closest = b[0];
+      const worst = b[b.length - 1];
+      const under = b.filter(x => x.value <= answer).sort((a, bb) => bb.value - a.value)[0] || null;
+      const stats = {};
+      if (under) stats.closestUnder = (this.translations.fun_closest_under || '⬇️ Plus proche sans dépasser') + ': ' + under.value + ' (' + under.username + ')';
+      if (closest) stats.closest = (this.translations.fun_closest || '🎯 Plus proche') + ': ' + Math.abs(closest.value - answer) + ' (' + closest.username + ')';
+      if (worst && worst !== closest) stats.worst = (this.translations.fun_worst || '🐌 Le plus loin') + ': ' + Math.abs(worst.value - answer) + ' (' + worst.username + ')';
+      return stats;
+    },
+    updateTitle(data) {
+      var t = 'UAC';
+      if (data.round && data.round.revealed) t = '🔓 ' + data.round.answer + ' — ' + t;
+      else if (data.round) t = '❓ ' + t;
+      document.title = t;
     }
   },
   mounted() {
     this.loadState();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
     var socket = io();
     var self = this;
-    socket.on('newRound', function() { self.loadState(); showToast(self.translations.new_round || 'Nouvelle question disponible !', 'info'); });
+    socket.on('newRound', function() {
+      self.loadState();
+      showToast(self.translations.new_round || 'Nouvelle question disponible !', 'info');
+      if (typeof playBet === 'function') playBet();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+        new Notification(self.translations.new_round || 'Nouvelle question !', { body: self.currentRound?.question });
+      }
+    });
     socket.on('roundRevealed', function() { self.loadState(); showToast(self.translations.round_revealed || 'Réponses dévoilées !', 'success'); });
     socket.on('betUpdate', function() { self.loadState(); });
+    // Enter key shortcut for bet
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && document.activeElement === document.getElementById('bet-value')) submitBet();
+    });
     // Fallback polling if socket disconnects
     setInterval(function() { this.loadState(); }.bind(this), 30000);
   },

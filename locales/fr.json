@@ -59,6 +59,9 @@
     "tiebreaker_rule": "En cas d'égalité, le plus proche sans dépasser l'emporte.",
     "new_round": "Nouvelle question disponible !",
     "round_revealed": "Réponses dévoilées !",
+    "fun_closest_under": "⬇️ Plus proche sans dépasser",
+    "fun_closest": "🎯 Plus proche",
+    "fun_worst": "🐌 Le plus loin",
     "footer": "UAC — Underground Algerian Community"
   },
   "leaderboard": {
@@ -106,6 +109,7 @@
     "error": "Erreur de chargement",
     "published": "Question publiée !",
     "reveal_now": "Révéler maintenant",
+    "reveal_confirm": "Révéler maintenant ? Les résultats seront visibles par tous.",
     "reset_confirm": "Tout réinitialiser ? Les questions et réponses seront supprimées.",
     "reset_done": "Jeu réinitialisé",
     "participants": "Participant(s)",
@@ -250,6 +254,7 @@
     "wins": "Victoires",
     "points": "Points",
     "best_rank": "Meilleur rang",
+    "win_streak": "Série en cours",
     "impostor_games": "Parties Imposteur",
     "impostor_wins": "Gagnées Imposteur",
     "impostor_points": "Points Imposteur",
@@ -282,7 +287,10 @@
     "master_impostor_icon": "😈",
     "top3_10": "Top 3 x10",
     "top3_10_desc": "Termine dans le top 3 10 fois",
-    "top3_10_icon": "🔥"
+    "top3_10_icon": "🔥",
+    "hot_streak": "En pleine forme",
+    "hot_streak_desc": "3 victoires consécutives",
+    "hot_streak_icon": "🔥"
   },
   "errors": {
     "auth": "Erreur d'authentification. Vérifie les logs.",

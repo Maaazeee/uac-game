@@ -253,7 +253,8 @@ var app = new Vue({
     userId: userId,
     wasRevealed: false,
     remaining: 0,
-    timerInterval: null
+    timerInterval: null,
+    wasNotRevealed: false
   },
   computed: {
     phaseLabel() {
@@ -281,13 +282,22 @@ var app = new Vue({
         this.submitted = data.iSubmitted;
         this.voted = data.iVoted;
         this.loading = false;
+        // Dynamic title
+        this.updateTitle(data);
         // Detect reveal transition
         if (data.round && data.round.phase === 'revealed' && !this.wasRevealed) {
           this.wasRevealed = true;
           if (typeof playImpostorReveal === 'function') playImpostorReveal();
           if (typeof fireConfetti === 'function') fireConfetti(4000);
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+            new Notification(translations.result || 'Résultats !', { body: data.round.winner === 'players' ? (translations.players_win || 'Les joueurs gagnent') : (translations.impostor_wins || 'Imposteur gagne') });
+          }
         }
-        if (data.round && data.round.phase !== 'revealed') this.wasRevealed = false;
+        if (data.round && data.round.phase !== 'revealed') {
+          this.wasRevealed = false;
+          if (!this.wasNotRevealed) this.wasNotRevealed = true;
+        }
+        if (!data.round || data.round.phase === 'revealed') this.wasNotRevealed = false;
         // Start timer if deadline exists
         if (data.round && data.round.deadline && data.round.phase !== 'revealed') {
           this.updateRemaining(data.round.deadline);
@@ -350,18 +360,33 @@ var app = new Vue({
       if (!this.round || !this.round.submissions) return '';
       var sub = this.round.submissions.find(function(s) { return s.userId === id; });
       return sub ? 'submitted' : '';
+    },
+    updateTitle(data) {
+      var t = 'UAC Imposteur';
+      if (data.round) {
+        if (data.round.phase === 'revealed') t = '🔓 ' + t;
+        else if (data.round.phase === 'voting') t = '🗳️ ' + t;
+        else t = '✍️ ' + t;
+      }
+      document.title = t;
     }
   },
   mounted() {
     this.fetchState();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
     var socket = io();
-    socket.on('impostorStart', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorAssign', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorVoting', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorRevealed', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorPlayerJoined', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorWordSubmitted', function() { this.fetchState(); }.bind(this));
-    socket.on('impostorVoteCast', function() { this.fetchState(); }.bind(this));
+    var self = this;
+    socket.on('impostorStart', function() { self.fetchState(); });
+    socket.on('impostorAssign', function() { self.fetchState(); });
+    socket.on('impostorVoting', function() { self.fetchState(); if (typeof playImpostorVoting === 'function') playImpostorVoting(); });
+    socket.on('impostorRevealed', function() { self.fetchState(); });
+    socket.on('impostorPlayerJoined', function() { self.fetchState(); });
+    socket.on('impostorWordSubmitted', function() { self.fetchState(); if (typeof playBet === 'function') playBet(); });
+    socket.on('impostorVoteCast', function() { self.fetchState(); if (typeof playVote === 'function') playVote(); });
+    // Enter key shortcut for word submission
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && self.round && self.round.phase === 'submission' && !self.submitted && self.myWord.trim()) self.submitWord();
+    });
     // Fallback polling
     setInterval(function() { this.fetchState(); }.bind(this), 30000);
   },

@@ -59,6 +59,9 @@
     "tiebreaker_rule": "في حالة التعادل، الأقرب دون تجاوز يفوز.",
     "new_round": "سؤال جديد متاح!",
     "round_revealed": "تم كشف الإجابات!",
+    "fun_closest_under": "⬇️ الأقرب دون تجاوز",
+    "fun_closest": "🎯 الأقرب",
+    "fun_worst": "🐌 الأبعد",
     "footer": "UAC — المجتمع الجزائري"
   },
   "leaderboard": {
@@ -106,6 +109,7 @@
     "error": "خطأ في التحميل",
     "published": "تم نشر السؤال!",
     "reveal_now": "كشف الآن",
+    "reveal_confirm": "كشف الآن؟ ستكون النتائج مرئية للجميع.",
     "reset_confirm": "إعادة تعيين الكل؟ سيتم حذف الأسئلة والإجابات.",
     "reset_done": "تمت إعادة تعيين اللعبة",
     "participants": "مشارك(ين)",
@@ -250,6 +254,7 @@
     "wins": "الانتصارات",
     "points": "النقاط",
     "best_rank": "أفضل ترتيب",
+    "win_streak": "سلسلة الانتصارات",
     "impostor_games": "ألعاب المحتال",
     "impostor_wins": "انتصارات المحتال",
     "impostor_points": "نقاط المحتال",
@@ -282,7 +287,10 @@
     "master_impostor_icon": "😈",
     "top3_10": "أفضل 3 ×10",
     "top3_10_desc": "احتل المركز الثالث 10 مرات",
-    "top3_10_icon": "🔥"
+    "top3_10_icon": "🔥",
+    "hot_streak": "في قمة التألق",
+    "hot_streak_desc": "3 انتصارات متتالية",
+    "hot_streak_icon": "🔥"
   },
   "errors": {
     "auth": "خطأ في المصادقة. تحقق من السجلات.",

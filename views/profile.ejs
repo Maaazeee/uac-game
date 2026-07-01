@@ -124,6 +124,12 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <div class="num"><%= stats.impostorWins %></div>
       <div class="label"><%= t('profile.impostor_wins') %></div>
     </div>
+    <% if (stats.winStreak > 0) { %>
+    <div class="stat-card" style="border-color:#ffd700">
+      <div class="num" style="color:#ffd700">🔥 <%= stats.winStreak %></div>
+      <div class="label"><%= t('profile.win_streak') %></div>
+    </div>
+    <% } %>
   </div>
 
   <% if (badges.length > 0) { %>

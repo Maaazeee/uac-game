@@ -128,7 +128,16 @@ function sanitize(str: string): string {
 // --- Socket.io ---
 io.on('connection', (socket) => {
   logger.debug({ socketId: socket.id }, 'Socket connected');
+  socket.on('disconnect', () => {
+    logger.debug({ socketId: socket.id }, 'Socket disconnected');
+  });
 });
+
+// Emit socket count periodically
+setInterval(() => {
+  const count = io.engine.clientsCount;
+  io.emit('socketCount', count);
+}, 5000);
 
 // --- Routes ---
 
@@ -185,6 +194,12 @@ app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunctio
     const userId = (req.session as any).user.id;
     const jpStats = db.getUserStats(userId);
     const impStats = db.getImpostorStats(userId);
+    // Compute win streak (consecutive 1st places from most recent)
+    let winStreak = 0;
+    for (const g of jpStats.gameHistory.slice().reverse()) {
+      if (g.rank === 1) winStreak++;
+      else break;
+    }
     const badges: string[] = [];
     if (jpStats.wins >= 1) badges.push('first_win');
     if (jpStats.bestRank === 1) badges.push('sharp_shooter');
@@ -194,7 +209,8 @@ app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunctio
     if (jpStats.totalBets >= 20) badges.push('gambler');
     if (impStats.impostorWins >= 3) badges.push('master_impostor');
     if (jpStats.top3Count >= 10) badges.push('top3_10');
-    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count }, badges });
+    if (winStreak >= 3) badges.push('hot_streak');
+    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, badges });
   } catch (err) { next(err); }
 });
 

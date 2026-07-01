@@ -64,3 +64,20 @@ function playError() {
   playTone(200, 0.2, 'square', 0.08);
   setTimeout(function(){ playTone(160, 0.3, 'square', 0.08); }, 150);
 }
+
+function playBet() {
+  playTone(660, 0.1, 'sine', 0.1);
+  setTimeout(function(){ playTone(880, 0.15, 'sine', 0.1); }, 80);
+}
+
+function playVote() {
+  playTone(440, 0.12, 'triangle', 0.1);
+  setTimeout(function(){ playTone(550, 0.12, 'triangle', 0.1); }, 100);
+  setTimeout(function(){ playTone(660, 0.2, 'triangle', 0.1); }, 200);
+}
+
+function playImpostorVoting() {
+  playTone(350, 0.15, 'sawtooth', 0.06);
+  setTimeout(function(){ playTone(400, 0.15, 'sawtooth', 0.06); }, 150);
+  setTimeout(function(){ playTone(450, 0.15, 'sawtooth', 0.06); }, 300);
+}
