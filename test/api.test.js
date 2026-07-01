@@ -11,7 +11,7 @@ process.env.PORT = '0';
 const TEST_DB = path.join(__dirname, '..', 'data', 'database.sqlite');
 if (fs.existsSync(TEST_DB)) fs.unlinkSync(TEST_DB);
 
-const app = require('../server');
+const app = require('../dist/server');
 
 describe('API', function () {
   before(async function () {
