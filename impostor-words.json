@@ -1,0 +1,22 @@
+[
+  {"real": {"fr": "Chat", "en": "Cat", "ar": "قطة"}, "fake": {"fr": "Chien", "en": "Dog", "ar": "كلب"}},
+  {"real": {"fr": "Plage", "en": "Beach", "ar": "شاطئ"}, "fake": {"fr": "Piscine", "en": "Pool", "ar": "مسبح"}},
+  {"real": {"fr": "Pizza", "en": "Pizza", "ar": "بيتزا"}, "fake": {"fr": "Tacos", "en": "Tacos", "ar": "تاكو"}},
+  {"real": {"fr": "Foot", "en": "Soccer", "ar": "كرة قدم"}, "fake": {"fr": "Basket", "en": "Basketball", "ar": "كرة سلة"}},
+  {"real": {"fr": "Algérie", "en": "Algeria", "ar": "الجزائر"}, "fake": {"fr": "Maroc", "en": "Morocco", "ar": "المغرب"}},
+  {"real": {"fr": "Soleil", "en": "Sun", "ar": "شمس"}, "fake": {"fr": "Lune", "en": "Moon", "ar": "قمر"}},
+  {"real": {"fr": "Café", "en": "Coffee", "ar": "قهوة"}, "fake": {"fr": "Thé", "en": "Tea", "ar": "شاي"}},
+  {"real": {"fr": "Avion", "en": "Plane", "ar": "طائرة"}, "fake": {"fr": "Hélicoptère", "en": "Helicopter", "ar": "هليكوبتر"}},
+  {"real": {"fr": "Hiver", "en": "Winter", "ar": "شتاء"}, "fake": {"fr": "Été", "en": "Summer", "ar": "صيف"}},
+  {"real": {"fr": "Montagne", "en": "Mountain", "ar": "جبل"}, "fake": {"fr": "Volcan", "en": "Volcano", "ar": "بركان"}},
+  {"real": {"fr": "Guitare", "en": "Guitar", "ar": "غيتار"}, "fake": {"fr": "Piano", "en": "Piano", "ar": "بيانو"}},
+  {"real": {"fr": "Serpent", "en": "Snake", "ar": "ثعبان"}, "fake": {"fr": "Lézard", "en": "Lizard", "ar": "سحلية"}},
+  {"real": {"fr": "Miel", "en": "Honey", "ar": "عسل"}, "fake": {"fr": "Confiture", "en": "Jam", "ar": "مربى"}},
+  {"real": {"fr": "Train", "en": "Train", "ar": "قطار"}, "fake": {"fr": "Métro", "en": "Metro", "ar": "مترو"}},
+  {"real": {"fr": "Fraise", "en": "Strawberry", "ar": "فراولة"}, "fake": {"fr": "Framboise", "en": "Raspberry", "ar": "توت"}},
+  {"real": {"fr": "Coucher de soleil", "en": "Sunset", "ar": "غروب"}, "fake": {"fr": "Lever de soleil", "en": "Sunrise", "ar": "شروق"}},
+  {"real": {"fr": "Dromadaire", "en": "Camel", "ar": "جمل"}, "fake": {"fr": "Chameau", "en": "Dromedary", "ar": "بعير"}},
+  {"real": {"fr": "Couscous", "en": "Couscous", "ar": "كسكس"}, "fake": {"fr": "Tajine", "en": "Tagine", "ar": "طاجين"}},
+  {"real": {"fr": "Tapis", "en": "Carpet", "ar": "سجاد"}, "fake": {"fr": "Moquette", "en": "Rug", "ar": "بساط"}},
+  {"real": {"fr": "Loupe", "en": "Magnifying glass", "ar": "عدسة مكبرة"}, "fake": {"fr": "Microscope", "en": "Microscope", "ar": "مجهر"}}
+]

@@ -414,6 +414,252 @@ app.get('/api/leaderboard', (req, res) => {
   res.json(computeLeaderboard(db.rounds));
 });
 
+// --- Impostor Game ---
+
+const IMPOSTOR_WORDS_PATH = path.join(__dirname, 'impostor-words.json');
+
+function loadImpostorWords() {
+  try { return JSON.parse(fs.readFileSync(IMPOSTOR_WORDS_PATH, 'utf8')); }
+  catch { return []; }
+}
+
+function getImpostorState(db) {
+  const rounds = db.impostorRounds || [];
+  return rounds[rounds.length - 1] || null;
+}
+
+function saveImpostorState(db, round) {
+  if (!db.impostorRounds) db.impostorRounds = [];
+  if (round) {
+    if (db.impostorRounds.length === 0 || db.impostorRounds[db.impostorRounds.length - 1].id !== round.id) {
+      db.impostorRounds.push(round);
+    } else {
+      db.impostorRounds[db.impostorRounds.length - 1] = round;
+    }
+  }
+  saveDB(db);
+}
+
+// Impostor game page
+app.get('/impostor', requireAuth, (req, res) => {
+  res.render('impostor', { user: req.session.user });
+});
+
+// Admin impostor page
+app.get('/admin/impostor', requireAuth, requireAdmin, (req, res) => {
+  res.render('admin-impostor', { user: req.session.user });
+});
+
+// Get active impostor round + current player info
+app.get('/api/impostor/state', requireAuth, (req, res) => {
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round) return res.json({ round: null });
+
+  const userId = req.session.user.id;
+  const player = round.players[userId];
+
+  res.json({
+    round: {
+      id: round.id,
+      phase: round.phase,
+      realWord: round.phase === 'submission' && player
+        ? (player.isImpostor ? round.fakeWord : round.realWord)
+        : null,
+      players: Object.keys(round.players),
+      playerCount: Object.keys(round.players).length,
+      submissions: round.phase === 'voting' || round.phase === 'revealed'
+        ? Object.values(round.players).map(p => ({ word: p.word, userId: p.userId }))
+        : null,
+      impostorId: round.phase === 'revealed' ? round.impostorId : null,
+      winner: round.phase === 'revealed' ? round.winner : null,
+      votes: round.phase === 'revealed' ? round.votes : null,
+      createdAt: round.createdAt
+    },
+    iAmImpostor: player ? player.isImpostor : false,
+    iSubmitted: player ? !!player.word : false,
+    iVoted: player ? !!player.vote : false
+  });
+});
+
+// Join / create player in current round
+app.post('/api/impostor/join', requireAuth, (req, res) => {
+  const db = loadDB();
+  let round = getImpostorState(db);
+  if (!round || round.phase !== 'submission') return res.json({ success: true }); // no active round
+  if (!round.players[req.session.user.id]) {
+    round.players[req.session.user.id] = {
+      userId: req.session.user.id,
+      username: req.session.user.globalName || req.session.user.username,
+      avatar: req.session.user.avatar,
+      isImpostor: false,
+      word: null,
+      vote: null
+    };
+    saveImpostorState(db, round);
+  }
+  res.json({ success: true, playerCount: Object.keys(round.players).length });
+});
+
+// Submit word association
+app.post('/api/impostor/submit', requireAuth, (req, res) => {
+  const { word } = req.body;
+  if (!word || !word.trim()) return res.status(400).json({ error: res.locals.t('impostor.word_required') });
+
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round || round.phase !== 'submission') return res.status(400).json({ error: res.locals.t('impostor.not_submission_phase') });
+
+  const player = round.players[req.session.user.id];
+  if (!player) return res.status(400).json({ error: res.locals.t('impostor.join_first') });
+  if (player.word) return res.status(400).json({ error: res.locals.t('impostor.already_submitted') });
+
+  player.word = word.trim();
+  saveImpostorState(db, round);
+  res.json({ success: true });
+});
+
+// Vote for impostor
+app.post('/api/impostor/vote', requireAuth, (req, res) => {
+  const { targetId } = req.body;
+  if (!targetId) return res.status(400).json({ error: res.locals.t('impostor.vote_required') });
+
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round || round.phase !== 'voting') return res.status(400).json({ error: res.locals.t('impostor.not_voting_phase') });
+
+  const player = round.players[req.session.user.id];
+  if (!player) return res.status(400).json({ error: res.locals.t('impostor.join_first') });
+  if (player.vote) return res.status(400).json({ error: res.locals.t('impostor.already_voted') });
+  if (!round.players[targetId]) return res.status(400).json({ error: res.locals.t('impostor.invalid_target') });
+  if (targetId === req.session.user.id) return res.status(400).json({ error: res.locals.t('impostor.cannot_self_vote') });
+
+  player.vote = targetId;
+  saveImpostorState(db, round);
+  res.json({ success: true });
+});
+
+// --- Admin Impostor API ---
+
+// Get word pairs
+app.get('/api/admin/impostor-words', requireAuth, requireAdmin, (req, res) => {
+  res.json(loadImpostorWords());
+});
+
+// Get history
+app.get('/api/admin/impostor/history', requireAuth, requireAdmin, (req, res) => {
+  const db = loadDB();
+  res.json((db.impostorRounds || []).slice(-10).reverse());
+});
+
+// Start a new round
+app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req, res) => {
+  const { realWord, fakeWord } = req.body;
+  if (!realWord || !fakeWord) return res.status(400).json({ error: res.locals.t('impostor.words_required') });
+
+  const db = loadDB();
+
+  const round = {
+    id: Date.now(),
+    realWord: realWord.trim(),
+    fakeWord: fakeWord.trim(),
+    impostorId: null,
+    phase: 'submission',
+    players: {},
+    createdBy: req.session.user.username,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!db.impostorRounds) db.impostorRounds = [];
+  db.impostorRounds.push(round);
+  saveDB(db);
+
+  res.json({ success: true, roundId: round.id });
+});
+
+// Start a round with random words from bank
+app.post('/api/admin/impostor/start-random', requireAuth, requireAdmin, (req, res) => {
+  const words = loadImpostorWords();
+  if (words.length === 0) return res.status(400).json({ error: res.locals.t('impostor.no_words') });
+
+  const pair = words[Math.floor(Math.random() * words.length)];
+  const lang = res.locals.lang || 'fr';
+  const realWord = (pair.real[lang] || pair.real.fr);
+  const fakeWord = (pair.fake[lang] || pair.fake.fr);
+
+  const db = loadDB();
+  const round = {
+    id: Date.now(),
+    realWord: realWord.trim(),
+    fakeWord: fakeWord.trim(),
+    impostorId: null,
+    phase: 'submission',
+    players: {},
+    createdBy: req.session.user.username,
+    createdAt: new Date().toISOString()
+  };
+  if (!db.impostorRounds) db.impostorRounds = [];
+  db.impostorRounds.push(round);
+  saveDB(db);
+  res.json({ success: true, roundId: round.id, realWord, fakeWord });
+});
+
+// Assign impostor (admin picks who or random)
+app.post('/api/admin/impostor/assign', requireAuth, requireAdmin, (req, res) => {
+  const { targetId } = req.body;
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round || round.phase !== 'submission') return res.status(400).json({ error: res.locals.t('impostor.no_round') });
+
+  const playerIds = Object.keys(round.players);
+  if (playerIds.length < 2) return res.status(400).json({ error: res.locals.t('impostor.need_players') });
+
+  // Reset any existing impostor
+  Object.values(round.players).forEach(p => { p.isImpostor = false; });
+
+  const impostorId = targetId || playerIds[Math.floor(Math.random() * playerIds.length)];
+  round.impostorId = impostorId;
+  if (round.players[impostorId]) round.players[impostorId].isImpostor = true;
+
+  saveImpostorState(db, round);
+  res.json({ success: true, impostorId });
+});
+
+// Move to voting phase
+app.post('/api/admin/impostor/voting-phase', requireAuth, requireAdmin, (req, res) => {
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round || round.phase !== 'submission') return res.status(400).json({ error: res.locals.t('impostor.no_round') });
+
+  round.phase = 'voting';
+  saveImpostorState(db, round);
+  res.json({ success: true });
+});
+
+// Reveal results
+app.post('/api/admin/impostor/reveal', requireAuth, requireAdmin, (req, res) => {
+  const db = loadDB();
+  const round = getImpostorState(db);
+  if (!round || round.phase !== 'voting') return res.status(400).json({ error: res.locals.t('impostor.no_round') });
+
+  const impostorId = round.impostorId;
+  const votes = {};
+  Object.values(round.players).forEach(p => {
+    if (p.vote) votes[p.vote] = (votes[p.vote] || 0) + 1;
+  });
+
+  // Impostor wins if not voted out by majority
+  const impostorVotes = votes[impostorId] || 0;
+  const totalVoters = Object.values(round.players).filter(p => p.vote).length;
+  const majority = totalVoters > 0 && impostorVotes > totalVoters / 2;
+
+  round.winner = majority ? 'players' : 'impostor';
+  round.votes = votes;
+  round.phase = 'revealed';
+  saveImpostorState(db, round);
+  res.json({ success: true, winner: round.winner });
+});
+
 // --- Start ---
 app.listen(PORT, () => {
   console.log(`Serveur UAC lancé sur http://localhost:${PORT}`);

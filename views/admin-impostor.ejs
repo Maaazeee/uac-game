@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title><%= t('admin_impostor.title') %></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{font-size:20px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:700px;margin:0 auto;padding:24px 16px}
+h1{font-size:22px;font-weight:900;margin-bottom:4px}
+h1 span{color:#c084fc}
+.sub{color:#888;font-size:13px;margin-bottom:20px}
+.phase-badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:8px}
+.phase-submission{background:#a855f722;border:1px solid #a855f7;color:#c084fc}
+.phase-voting{background:#f59e0b22;border:1px solid #f59e0b;color:#fbbf24}
+.phase-revealed{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.card{background:#16213e;border-radius:12px;padding:20px;margin-bottom:14px;border:1px solid #1e2a4a}
+.card h2{font-size:15px;margin-bottom:10px;color:#c084fc}
+.card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+.card select,.card input{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;width:100%;margin-bottom:8px;font-family:inherit}
+.card select:focus,.card input:focus{border-color:#a855f7}
+.card select option{background:#0f0f1a;color:#fff}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s;font-family:inherit}
+.btn:hover{background:#9333ea}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-red{background:#f04747}
+.btn-red:hover{background:#d33a3a}
+.btn-warning{background:#f59e0b;color:#000}
+.btn-warning:hover{background:#d97706}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-block{width:100%;justify-content:center;margin-top:6px}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.alert-success{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474722;border:1px solid #f04747;color:#fca5a5}
+.alert-info{background:#a855f733;border:1px solid #a855f7;color:#d8b4fe}
+.row{display:flex;gap:8px}
+.row > *{flex:1}
+.player-chip{background:#0f0f1a;border:1px solid #2a2a4a;border-radius:20px;padding:5px 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px;margin:3px}
+.player-chip.impostor{border-color:#f04747;background:#f0474711}
+.step{display:flex;align-items:center;gap:8px;color:#888;font-size:13px;padding:8px 0}
+.step .num{width:24px;height:24px;border-radius:50%;background:#2a2a4a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.step.active{color:#c084fc}
+.step.active .num{background:#a855f7;color:#fff}
+.step.done{color:#43b581}
+.step.done .num{background:#43b581;color:#fff}
+.history-item{background:#0f0f1a;border-radius:8px;padding:12px;margin-bottom:6px;font-size:13px;border:1px solid #1e1e3a}
+footer{text-align:center;padding:24px;color:#555;font-size:13px}
+@media(max-width:500px){.row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo"><span>UAC</span> Admin</div>
+    <div class="nav-links">
+      <a href="/admin" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
+  <div class="user-info">
+    <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="">
+    <span><%= user.globalName %></span>
+    <a href="/logout"><%= t('nav.logout') %></a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>🕵️ <span><%= t('admin_impostor.heading') %></span></h1>
+  <p class="sub"><%= t('admin_impostor.sub') %></p>
+
+  <div id="error" class="alert alert-error" style="display:none"></div>
+  <div id="success" class="alert alert-success" style="display:none"></div>
+
+  <!-- Step guide -->
+  <div class="card">
+    <h2><%= t('admin_impostor.game_flow') %></h2>
+    <div id="steps">
+      <div class="step" id="step-1"><span class="num">1</span> <%= t('admin_impostor.step1') %></div>
+      <div class="step" id="step-2"><span class="num">2</span> <%= t('admin_impostor.step2') %></div>
+      <div class="step" id="step-3"><span class="num">3</span> <%= t('admin_impostor.step3') %></div>
+      <div class="step" id="step-4"><span class="num">4</span> <%= t('admin_impostor.step4') %></div>
+    </div>
+  </div>
+
+  <!-- Start round -->
+  <div class="card">
+    <h2>🚀 <%= t('admin_impostor.start_round') %></h2>
+    <div class="row">
+      <input id="real-word" placeholder="<%= t('admin_impostor.real_placeholder') %>">
+      <input id="fake-word" placeholder="<%= t('admin_impostor.fake_placeholder') %>">
+    </div>
+    <button class="btn btn-green btn-block" onclick="startRound()">📢 <%= t('admin_impostor.start_btn') %></button>
+    <button class="btn btn-sm btn-block" onclick="startRandom()" style="margin-top:4px">🎲 <%= t('admin_impostor.random_btn') %></button>
+  </div>
+
+  <!-- Assign impostor -->
+  <div class="card" id="assign-section" style="display:none">
+    <h2>😈 <%= t('admin_impostor.assign') %></h2>
+    <p style="color:#888;font-size:13px;margin-bottom:8px"><%= t('admin_impostor.assign_hint') %></p>
+    <select id="impostor-select"><option value=""><%= t('admin_impostor.random_assign') %></option></select>
+    <button class="btn btn-warning btn-block" onclick="assignImpostor()">😈 <%= t('admin_impostor.assign_btn') %></button>
+  </div>
+
+  <!-- Phase controls -->
+  <div class="card" id="phase-section" style="display:none">
+    <h2>🎮 <%= t('admin_impostor.controls') %></h2>
+    <div id="phase-state" style="margin-bottom:8px"></div>
+    <button id="to-voting-btn" class="btn btn-block" onclick="toVotingPhase()" style="display:none">🗳️ <%= t('admin_impostor.to_voting') %></button>
+    <button id="reveal-btn" class="btn btn-red btn-block" onclick="revealResults()" style="display:none">🔓 <%= t('admin_impostor.reveal') %></button>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2>📜 <%= t('admin_impostor.history') %></h2>
+    <div id="history"><p style="color:#888;font-size:13px"><%= t('admin_impostor.loading') %></p></div>
+  </div>
+</div>
+
+<footer><%= t('admin_impostor.footer') %></footer>
+
+<script>
+var translations = <%- JSON.stringify(locale.admin_impostor || locale) %>;
+
+async function api(url, opts) {
+  var res = await fetch(url, opts);
+  var data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
+
+function showError(msg) {
+  document.getElementById('error').textContent = msg;
+  document.getElementById('error').style.display = 'block';
+  setTimeout(() => document.getElementById('error').style.display = 'none', 4000);
+}
+function showSuccess(msg) {
+  document.getElementById('success').textContent = msg;
+  document.getElementById('success').style.display = 'block';
+  setTimeout(() => document.getElementById('success').style.display = 'none', 4000);
+}
+
+function updateSteps(phase) {
+  for (var i = 1; i <= 4; i++) {
+    var el = document.getElementById('step-' + i);
+    el.classList.remove('active', 'done');
+  }
+  if (phase === 'submission') { document.getElementById('step-1').classList.add('done'); document.getElementById('step-2').classList.add('active'); }
+  if (phase === 'voting') { document.getElementById('step-1').classList.add('done'); document.getElementById('step-2').classList.add('done'); document.getElementById('step-3').classList.add('active'); }
+  if (phase === 'revealed') { for (var i = 1; i <= 4; i++) document.getElementById('step-' + i).classList.add('done'); }
+}
+
+async function startRound() {
+  var realWord = document.getElementById('real-word').value.trim();
+  var fakeWord = document.getElementById('fake-word').value.trim();
+  if (!realWord || !fakeWord) { showError((window.translations.words_required || 'Les deux mots sont requis')); return; }
+  try {
+    await api('/api/admin/impostor/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ realWord, fakeWord })
+    });
+    showSuccess('✅ ' + (window.translations.round_started || 'Manche lancée'));
+    document.getElementById('real-word').value = '';
+    document.getElementById('fake-word').value = '';
+    loadState();
+  } catch(e) { showError(e.message); }
+}
+
+async function startRandom() {
+  try {
+    var data = await api('/api/admin/impostor/start-random', { method: 'POST' });
+    showSuccess('✅ ' + (window.translations.round_started || 'Manche lancée') + ' (' + data.realWord + ' / ' + data.fakeWord + ')');
+    loadState();
+  } catch(e) { showError(e.message); }
+}
+
+async function assignImpostor() {
+  var targetId = document.getElementById('impostor-select').value || null;
+  try {
+    await api('/api/admin/impostor/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetId: targetId || undefined })
+    });
+    showSuccess('😈 ' + (window.translations.impostor_assigned || 'Imposteur désigné'));
+    loadState();
+  } catch(e) { showError(e.message); }
+}
+
+async function toVotingPhase() {
+  try {
+    await api('/api/admin/impostor/voting-phase', { method: 'POST' });
+    showSuccess('🗳️ ' + (window.translations.voting_started || 'Phase de vote'));
+    loadState();
+  } catch(e) { showError(e.message); }
+}
+
+async function revealResults() {
+  try {
+    var data = await api('/api/admin/impostor/reveal', { method: 'POST' });
+    showSuccess('🔓 ' + (window.translations.revealed || 'Résultats dévoilés') + ' - ' + (data.winner === 'players' ? '🙋 Joueurs' : '😈 Imposteur') + ' gagne !');
+    loadState();
+  } catch(e) { showError(e.message); }
+}
+
+async function loadState() {
+  try {
+    var data = await api('/api/impostor/state');
+    var round = data.round;
+    var assignSection = document.getElementById('assign-section');
+    var phaseSection = document.getElementById('phase-section');
+    var toVotingBtn = document.getElementById('to-voting-btn');
+    var revealBtn = document.getElementById('reveal-btn');
+    var phaseState = document.getElementById('phase-state');
+
+    if (!round) {
+      assignSection.style.display = 'none';
+      phaseSection.style.display = 'none';
+      updateSteps(null);
+      return;
+    }
+
+    updateSteps(round.phase);
+
+    // Phase state display
+    var lang = '<%= lang %>';
+    var playerCount = round.playerCount || 0;
+    phaseState.innerHTML = '<span class="phase-badge phase-' + round.phase + '">' + round.phase + '</span> ' + playerCount + ' joueur(s)';
+
+    // Show assign section only in submission phase and if no impostor assigned yet
+    var hasImpostor = round.impostorId || false;
+    assignSection.style.display = (round.phase === 'submission' && !hasImpostor) ? 'block' : 'none';
+
+    // Phase controls
+    phaseSection.style.display = 'block';
+    toVotingBtn.style.display = (round.phase === 'submission' && hasImpostor) ? 'block' : 'none';
+    revealBtn.style.display = round.phase === 'voting' ? 'block' : 'none';
+
+    // Populate player select
+    if (round.phase === 'submission' && !hasImpostor) {
+      var select = document.getElementById('impostor-select');
+      select.innerHTML = '<option value="">- ' + (window.translations.random_assign || 'Aléatoire') + ' -</option>';
+      // Can't get player names without submission - they're in round.players but we don't expose names
+      select.innerHTML += '<option value="" disabled>' + (window.translations.players_join_first || 'Les joueurs doivent rejoindre') + '</option>';
+    }
+
+    loadHistory();
+  } catch(e) { showError(e.message); }
+}
+
+async function loadHistory() {
+  try {
+    var data = await api('/api/admin/impostor/history');
+    var el = document.getElementById('history');
+    if (data.length === 0) { el.innerHTML = '<p style="color:#888;font-size:13px">' + (window.translations.history_empty || 'Aucun historique') + '</p>'; return; }
+    el.innerHTML = data.map(function(r) {
+      var w = r.winner === 'players' ? '🙋 Joueurs' : (r.winner === 'impostor' ? '😈 Imposteur' : '?');
+      return '<div class="history-item">📝 ' + r.realWord + ' / ' + r.fakeWord + ' · 👥 ' + Object.keys(r.players).length + ' joueurs · 🏆 ' + w + ' · par ' + (r.createdBy || 'admin') + '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('history').innerHTML = '<p style="color:#f04747">' + (window.translations.error || 'Erreur') + '</p>';
+  }
+}
+
+loadState();
+setInterval(loadState, 3000);
+</script>
+</body>
+</html>
