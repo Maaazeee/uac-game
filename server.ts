@@ -44,6 +44,7 @@ const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/callb
 const GUILD_ID = process.env.GUILD_ID || '';
 
 // --- Middleware ---
+app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

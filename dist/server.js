@@ -77,6 +77,7 @@ const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/callback`;
 const GUILD_ID = process.env.GUILD_ID || '';
 // --- Middleware ---
+app.set('trust proxy', 1);
 app.use((0, helmet_1.default)({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
