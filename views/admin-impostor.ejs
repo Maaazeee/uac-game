@@ -111,8 +111,20 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <input id="real-word" placeholder="<%= t('admin_impostor.real_placeholder') %>">
       <input id="fake-word" placeholder="<%= t('admin_impostor.fake_placeholder') %>">
     </div>
+    <div style="margin-bottom:8px">
+      <label><%= t('admin_impostor.duration_label') %></label>
+      <select id="duration-select">
+        <option value=""><%= t('admin_impostor.no_duration') %></option>
+        <option value="2">2 <%= t('admin_impostor.minutes') %></option>
+        <option value="5">5 <%= t('admin_impostor.minutes') %></option>
+        <option value="10">10 <%= t('admin_impostor.minutes') %></option>
+        <option value="15">15 <%= t('admin_impostor.minutes') %></option>
+        <option value="30">30 <%= t('admin_impostor.minutes') %></option>
+      </select>
+    </div>
     <button class="btn btn-green btn-block" onclick="startRound()">📢 <%= t('admin_impostor.start_btn') %></button>
     <button class="btn btn-sm btn-block" onclick="startRandom()" style="margin-top:4px">🎲 <%= t('admin_impostor.random_btn') %></button>
+    <a href="/admin/words" class="btn btn-sm btn-block" style="margin-top:4px;display:inline-flex;text-decoration:none;justify-content:center">📚 <%= t('admin_impostor.manage_words') %></a>
   </div>
 
   <!-- Assign impostor -->
@@ -120,6 +132,7 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
     <h2>😈 <%= t('admin_impostor.assign') %></h2>
     <p style="color:#888;font-size:13px;margin-bottom:8px"><%= t('admin_impostor.assign_hint') %></p>
     <select id="impostor-select"><option value=""><%= t('admin_impostor.random_assign') %></option></select>
+    <div id="players-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px"></div>
     <button class="btn btn-warning btn-block" onclick="assignImpostor()">😈 <%= t('admin_impostor.assign_btn') %></button>
   </div>
 
@@ -174,12 +187,13 @@ function updateSteps(phase) {
 async function startRound() {
   var realWord = document.getElementById('real-word').value.trim();
   var fakeWord = document.getElementById('fake-word').value.trim();
+  var duration = parseInt(document.getElementById('duration-select').value) || 0;
   if (!realWord || !fakeWord) { showError((window.translations.words_required || 'Les deux mots sont requis')); return; }
   try {
     await api('/api/admin/impostor/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ realWord, fakeWord })
+      body: JSON.stringify({ realWord, fakeWord, duration: duration || undefined })
     });
     showSuccess('✅ ' + (window.translations.round_started || 'Manche lancée'));
     document.getElementById('real-word').value = '';
@@ -189,8 +203,9 @@ async function startRound() {
 }
 
 async function startRandom() {
+  var duration = parseInt(document.getElementById('duration-select').value) || 0;
   try {
-    var data = await api('/api/admin/impostor/start-random', { method: 'POST' });
+    var data = await api('/api/admin/impostor/start-random', { method: 'POST', body: JSON.stringify({ duration: duration || undefined }) });
     showSuccess('✅ ' + (window.translations.round_started || 'Manche lancée') + ' (' + data.realWord + ' / ' + data.fakeWord + ')');
     loadState();
   } catch(e) { showError(e.message); }
@@ -258,12 +273,27 @@ async function loadState() {
     toVotingBtn.style.display = (round.phase === 'submission' && hasImpostor) ? 'block' : 'none';
     revealBtn.style.display = round.phase === 'voting' ? 'block' : 'none';
 
-    // Populate player select
+    // Populate player select and player names
     if (round.phase === 'submission' && !hasImpostor) {
       var select = document.getElementById('impostor-select');
       select.innerHTML = '<option value="">- ' + (window.translations.random_assign || 'Aléatoire') + ' -</option>';
-      // Can't get player names without submission - they're in round.players but we don't expose names
-      select.innerHTML += '<option value="" disabled>' + (window.translations.players_join_first || 'Les joueurs doivent rejoindre') + '</option>';
+      var playerList = document.getElementById('players-list');
+      playerList.innerHTML = '';
+      if (round.players && round.players.length > 0) {
+        round.players.forEach(function(p) {
+          var opt = document.createElement('option');
+          opt.value = p.userId;
+          opt.textContent = p.username;
+          select.appendChild(opt);
+          var chip = document.createElement('span');
+          chip.className = 'player-chip';
+          chip.textContent = p.username;
+          playerList.appendChild(chip);
+        });
+      } else {
+        select.innerHTML += '<option value="" disabled>' + (window.translations.players_join_first || 'Les joueurs doivent rejoindre') + '</option>';
+        playerList.innerHTML = '<span style="color:#888;font-size:13px">' + (window.translations.players_join_first || 'Aucun joueur') + '</span>';
+      }
     }
 
     loadHistory();

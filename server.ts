@@ -177,6 +177,7 @@ app.get('/admin', requireAuth, requireAdmin, (req: Request, res: Response) => re
 app.get('/admin/questions', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-questions', { user: (req.session as any).user, ADMINS }));
 app.get('/impostor', requireAuth, (req: Request, res: Response) => res.render('impostor', { user: (req.session as any).user }));
 app.get('/admin/impostor', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-impostor', { user: (req.session as any).user }));
+app.get('/admin/words', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-words', { user: (req.session as any).user }));
 app.get('/leaderboard', requireAuth, (req: Request, res: Response) => res.render('leaderboard', { user: (req.session as any).user }));
 
 app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunction) => {
@@ -308,11 +309,12 @@ app.get('/api/impostor/state', requireAuth, (req: Request, res: Response) => {
   if (!round) return res.json({ round: null });
   const userId = (req.session as any).user.id;
   const player = round.players[userId];
+  const playerList = Object.values(round.players).map(p => ({ userId: p.userId, username: p.username }));
   res.json({
     round: {
-      id: round.id, phase: round.phase,
+      id: round.id, phase: round.phase, deadline: round.deadline || null,
       realWord: round.phase === 'submission' && player ? (player.isImpostor ? round.fakeWord : round.realWord) : null,
-      players: Object.keys(round.players), playerCount: Object.keys(round.players).length,
+      players: playerList, playerCount: Object.keys(round.players).length,
       submissions: round.phase === 'voting' || round.phase === 'revealed'
         ? Object.values(round.players).map(p => ({ word: p.word, userId: p.userId })) : null,
       impostorId: round.phase === 'revealed' ? round.impostorId : null,
@@ -348,6 +350,17 @@ app.post('/api/impostor/submit', requireAuth, (req: Request, res: Response) => {
   if (player.word) throw new ValidationError((res.locals as any).t('impostor.already_submitted'));
   db.upsertImpostorPlayer(round.id, { ...player, word: sanitize(word) });
   io.emit('impostorWordSubmitted', { id: round.id, playerId: (req.session as any).user.id });
+
+  // Auto-transition to voting if all players have submitted
+  const updated = db.getImpostorState();
+  if (updated && updated.phase === 'submission') {
+    const allSubmitted = Object.values(updated.players).every(p => p.word);
+    if (allSubmitted && Object.keys(updated.players).length >= 2) {
+      db.updateImpostorRound(round.id, { phase: 'voting' });
+      io.emit('impostorVoting', { id: round.id });
+    }
+  }
+
   res.json({ success: true });
 });
 
@@ -368,15 +381,36 @@ app.post('/api/impostor/vote', requireAuth, (req: Request, res: Response) => {
 
 // --- Admin Impostor API ---
 
-app.get('/api/admin/impostor-words', requireAuth, requireAdmin, (req: Request, res: Response) => res.json(db.getAllWords()));
+app.get('/api/admin/impostor-words', requireAuth, requireAdmin, (req: Request, res: Response) => res.json(db.getAllWordsWithId()));
+app.post('/api/admin/impostor-words', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  const { real, fake } = req.body;
+  if (!real || !fake) throw new ValidationError('Mots requis');
+  const realObj = typeof real === 'object' ? { fr: sanitize(real.fr||''), en: sanitize(real.en||''), ar: sanitize(real.ar||'') } : { fr: sanitize(real), en: '', ar: '' };
+  const fakeObj = typeof fake === 'object' ? { fr: sanitize(fake.fr||''), en: sanitize(fake.en||''), ar: sanitize(fake.ar||'') } : { fr: sanitize(fake), en: '', ar: '' };
+  db.addWord({ real: realObj, fake: fakeObj });
+  res.json({ success: true });
+});
+app.put('/api/admin/impostor-words', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  const { id, real, fake } = req.body;
+  if (!id || !real || !fake) throw new ValidationError('id, real, fake requis');
+  const realObj = typeof real === 'object' ? { fr: sanitize(real.fr||''), en: sanitize(real.en||''), ar: sanitize(real.ar||'') } : { fr: sanitize(real), en: '', ar: '' };
+  const fakeObj = typeof fake === 'object' ? { fr: sanitize(fake.fr||''), en: sanitize(fake.en||''), ar: sanitize(fake.ar||'') } : { fr: sanitize(fake), en: '', ar: '' };
+  db.updateWord(parseInt(id, 10), { real: realObj, fake: fakeObj });
+  res.json({ success: true });
+});
+app.delete('/api/admin/impostor-words/:id', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  db.deleteWord(parseInt(String(req.params.id), 10));
+  res.json({ success: true });
+});
 app.get('/api/admin/impostor/history', requireAuth, requireAdmin, (req: Request, res: Response) => res.json(db.getLastImpostorRoundIds(10)));
 
 app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req: Request, res: Response) => {
-  const { realWord, fakeWord } = req.body;
+  const { realWord, fakeWord, duration } = req.body;
   if (!realWord || !fakeWord) throw new ValidationError((res.locals as any).t('impostor.words_required'));
+  const deadline = duration ? Date.now() + duration * 60 * 1000 : null;
   db.createImpostorRound({
     id: Date.now(), realWord: sanitize(realWord), fakeWord: sanitize(fakeWord),
-    createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
+    deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
   });
   io.emit('impostorStart', { id: Date.now() });
   res.json({ success: true });
@@ -384,11 +418,13 @@ app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req: Request, 
 
 app.post('/api/admin/impostor/start-random', requireAuth, requireAdmin, (req: Request, res: Response) => {
   const lang = (res.locals as any).lang || 'fr';
+  const { duration } = req.body;
   const pair = db.getRandomWord(lang);
   if (!pair) throw new ValidationError((res.locals as any).t('impostor.no_words'));
+  const deadline = duration ? Date.now() + duration * 60 * 1000 : null;
   db.createImpostorRound({
     id: Date.now(), realWord: pair.real, fakeWord: pair.fake,
-    createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
+    deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
   });
   io.emit('impostorStart', { id: Date.now() });
   res.json({ success: true, realWord: pair.real, fakeWord: pair.fake });
@@ -399,7 +435,7 @@ app.post('/api/admin/impostor/assign', requireAuth, requireAdmin, (req: Request,
   const round = db.getImpostorState();
   if (!round || round.phase !== 'submission') throw new ValidationError((res.locals as any).t('impostor.no_round'));
   const playerIds = Object.keys(round.players);
-  if (playerIds.length < 2) throw new ValidationError((res.locals as any).t('impostor.need_players'));
+  if (playerIds.length < 3) throw new ValidationError((res.locals as any).t('impostor.need_min_players'));
 
   for (const pid of playerIds) db.upsertImpostorPlayer(round.id, { ...round.players[pid], isImpostor: false });
   const impostorId = targetId || playerIds[Math.floor(Math.random() * playerIds.length)];
@@ -442,11 +478,38 @@ app.use(errorHandler);
 
 // --- Cron: auto-reveal every 10s ---
 cron.schedule('*/10 * * * * *', () => {
+  // Juste Prix auto-reveal
   const round = db.getCurrentRound();
   if (round && !round.revealed && round.deadline && Date.now() >= round.deadline) {
     db.updateRound(round.id, { revealed: 1 });
     io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
-    logger.info({ roundId: round.id }, 'Auto-revealed round via cron');
+    logger.info({ roundId: round.id }, 'Auto-revealed Juste Prix round via cron');
+  }
+  // Impostor auto-transition: submission -> voting if deadline passed
+  const imp = db.getImpostorState();
+  if (imp && imp.phase === 'submission' && imp.deadline && Date.now() >= imp.deadline) {
+    if (imp.impostorId) {
+      db.updateImpostorRound(imp.id, { phase: 'voting' });
+      io.emit('impostorVoting', { id: imp.id });
+      logger.info({ roundId: imp.id }, 'Auto-transitioned impostor to voting via cron');
+    }
+  }
+  // Impostor auto-reveal if voting phase deadline passed
+  if (imp && imp.phase === 'voting' && imp.deadline && Date.now() >= imp.deadline) {
+    const impostorId = imp.impostorId;
+    const votes: Record<string, number> = {};
+    Object.values(imp.players).forEach(p => { if (p.vote) votes[p.vote] = (votes[p.vote] || 0) + 1; });
+    const impostorVotes = votes[impostorId] || 0;
+    const totalVoters = Object.values(imp.players).filter(p => p.vote).length;
+    const majority = totalVoters > 0 && impostorVotes > totalVoters / 2;
+    const winner = majority ? 'players' : 'impostor';
+    db.updateImpostorRound(imp.id, { phase: 'revealed', winner });
+    for (const pid of Object.keys(imp.players)) {
+      const pts = winner === 'impostor' && pid === impostorId ? 3 : (winner === 'players' && pid !== impostorId ? 1 : 0);
+      if (pts) db.addImpostorPoints(imp.id, pid, pts);
+    }
+    io.emit('impostorRevealed', { id: imp.id, winner });
+    logger.info({ roundId: imp.id, winner }, 'Auto-revealed impostor round via cron');
   }
 });
 

@@ -78,6 +78,12 @@ body{font-family:'Inter','Tajawal',sans-serif;background:linear-gradient(135deg,
 .top-links{display:flex;gap:12px;justify-content:center;margin-bottom:16px;font-size:13px}
 .top-links a{color:#888;text-decoration:none;font-weight:600}
 .top-links a:hover{color:#c084fc}
+.toast-container{position:fixed;top:80px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:350px}
+.toast{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;animation:slideInRight .3s ease;box-shadow:0 4px 20px #00000044}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+.toast-info{background:#a855f7;color:#fff}
+.toast-success{background:#43b581;color:#fff}
+.toast-warning{background:#f59e0b;color:#000}
 footer{text-align:center;padding:30px;color:#555;font-size:13px}
 @media(max-width:500px){.bet-row{flex-direction:column}}
 [dir="rtl"] .game-card{text-align:right}
@@ -108,6 +114,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 </div>
 
 <div class="container">
+  <div class="toast-container" id="toast-container"></div>
   <div class="top-links">
     <a href="/leaderboard">🏆 <%= t('nav.leaderboard') %></a>
   </div>
@@ -148,6 +155,9 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
         <div class="label" style="margin-bottom:4px">{{ translations.answer_label }}</div>
         <div class="big">{{ currentRound.answer }}</div>
         <div v-if="currentRound.reason" class="sub">{{ currentRound.reason }}</div>
+        <div class="sub" style="margin-top:6px;font-size:12px;color:#888;border-top:1px solid #2a2a4a;padding-top:8px">
+          ⚖️ {{ translations.tiebreaker_rule }}
+        </div>
       </div>
 
       <!-- Bet form (only if not revealed, deadline not passed, and user hasn't bet) -->
@@ -296,14 +306,25 @@ var app = new Vue({
   mounted() {
     this.loadState();
     var socket = io();
-    socket.on('newRound', function() { this.loadState(); }.bind(this));
-    socket.on('roundRevealed', function() { this.loadState(); }.bind(this));
-    socket.on('betUpdate', function() { this.loadState(); }.bind(this));
+    var self = this;
+    socket.on('newRound', function() { self.loadState(); showToast(self.translations.new_round || 'Nouvelle question disponible !', 'info'); });
+    socket.on('roundRevealed', function() { self.loadState(); showToast(self.translations.round_revealed || 'Réponses dévoilées !', 'success'); });
+    socket.on('betUpdate', function() { self.loadState(); });
     // Fallback polling if socket disconnects
     setInterval(function() { this.loadState(); }.bind(this), 30000);
   },
   beforeDestroy() { if (this.timerInterval) clearInterval(this.timerInterval); }
 });
+
+function showToast(msg, type) {
+  var container = document.getElementById('toast-container');
+  if (!container) return;
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + (type || 'info');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function() { el.remove(); }, 300); }, 4000);
+}
 
 async function submitBet() {
   const val = parseFloat(document.getElementById('bet-value').value);

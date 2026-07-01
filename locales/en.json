@@ -56,6 +56,9 @@
     "time_minutes": "m",
     "time_seconds": "s",
     "time_up": "Time's up!",
+    "tiebreaker_rule": "In case of a tie, the closest without going over wins.",
+    "new_round": "New question available!",
+    "round_revealed": "Answers revealed!",
     "footer": "UAC — Underground Algerian Community"
   },
   "leaderboard": {
@@ -171,6 +174,8 @@
     "already_voted": "Already voted",
     "invalid_target": "Invalid player",
     "cannot_self_vote": "You cannot vote for yourself",
+    "time_remaining": "Time remaining",
+    "need_min_players": "At least 3 players needed to assign the impostor",
     "footer": "UAC — Impostor Game"
   },
   "admin_impostor": {
@@ -204,7 +209,39 @@
     "voting_started": "Voting phase",
     "revealed": "Results revealed",
     "players_join_first": "Players must join first",
+    "duration_label": "Time limit (optional)",
+    "no_duration": "No limit",
+    "minutes": "min",
+    "manage_words": "Manage words",
     "footer": "UAC — Admin Impostor"
+  },
+  "admin_words": {
+    "title": "Words - UAC",
+    "heading": "Word Bank",
+    "sub": "Add, edit or remove word pairs for the Impostor game",
+    "add": "Add pair",
+    "edit": "Edit pair",
+    "real_label": "Real word",
+    "fake_label": "Fake word (impostor)",
+    "real_placeholder": "Real word...",
+    "fake_placeholder": "Fake word...",
+    "real_placeholder_en": "Real word...",
+    "fake_placeholder_en": "Fake word...",
+    "real_placeholder_ar": "الكلمة الحقيقية...",
+    "fake_placeholder_ar": "الكلمة المزيفة...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "list": "Word pairs",
+    "loading": "Loading...",
+    "empty": "No words in the bank",
+    "added": "Pair added!",
+    "updated": "Pair updated!",
+    "deleted": "Pair deleted",
+    "delete_confirm": "Delete this word pair?",
+    "real_required": "Real word required",
+    "fake_required": "Fake word required",
+    "error": "Loading error",
+    "footer": "UAC — Word Bank"
   },
   "profile": {
     "title": "Profile - UAC",
@@ -258,6 +295,7 @@
     "no_round_found": "No round found",
     "not_member_title": "Access denied",
     "not_member": "You must be a member of the UAC Discord server to log in. Join us first!",
-    "time_up": "Time's up!"
+    "time_up": "Time's up!",
+    "internal": "Internal server error"
   }
 }

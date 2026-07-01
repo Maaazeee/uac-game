@@ -38,6 +38,7 @@ export interface ImpostorPlayer {
 export interface ImpostorRound {
   id: number; realWord: string; fakeWord: string;
   impostorId: string; phase: string; winner: string;
+  deadline: number | null;
   createdBy: string; createdAt: string;
   players: Record<string, ImpostorPlayer>;
   points: Record<string, number>;
@@ -122,8 +123,9 @@ function createSchema(): void {
     id INTEGER PRIMARY KEY, realWord TEXT NOT NULL,
     fakeWord TEXT NOT NULL, impostorId TEXT DEFAULT '',
     phase TEXT DEFAULT 'submission', winner TEXT DEFAULT '',
-    createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
+    deadline INTEGER, createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
   )`);
+  try { run('ALTER TABLE impostor_rounds ADD COLUMN deadline INTEGER'); } catch (e) { /* column may already exist */ }
   run(`CREATE TABLE IF NOT EXISTS impostor_players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     roundId INTEGER NOT NULL, userId TEXT NOT NULL,
@@ -331,6 +333,7 @@ function getImpostorState(): ImpostorRound | null {
   if (!round) return null;
   const result = {
     ...round,
+    deadline: round.deadline as number | null || null,
     votes: {} as Record<string, number>,
     players: {} as Record<string, ImpostorPlayer>,
     points: {} as Record<string, number>
@@ -345,9 +348,9 @@ function getImpostorState(): ImpostorRound | null {
   return result;
 }
 
-function createImpostorRound(data: { id: number; realWord: string; fakeWord: string; createdBy: string; createdAt: string }): ImpostorRound | null {
-  run('INSERT INTO impostor_rounds(id,realWord,fakeWord,impostorId,phase,winner,createdBy,createdAt) VALUES(?,?,?,?,?,?,?,?)',
-    [data.id, data.realWord, data.fakeWord, '', 'submission', '', data.createdBy||'', data.createdAt||'']);
+function createImpostorRound(data: { id: number; realWord: string; fakeWord: string; deadline: number | null; createdBy: string; createdAt: string }): ImpostorRound | null {
+  run('INSERT INTO impostor_rounds(id,realWord,fakeWord,impostorId,phase,winner,deadline,createdBy,createdAt) VALUES(?,?,?,?,?,?,?,?,?)',
+    [data.id, data.realWord, data.fakeWord, '', 'submission', '', data.deadline, data.createdBy||'', data.createdAt||'']);
   save();
   return getImpostorState();
 }
@@ -522,6 +525,15 @@ function getRandomQuestion(lang: string = 'fr'): { q: string; a: number; r: stri
 
 // --- Impostor Words ---
 
+function getAllWordsWithId(): Array<{ id: number; real: Record<string, string>; fake: Record<string, string> }> {
+  return rowsToArray<Record<string, unknown>>(exec('SELECT * FROM impostor_words ORDER BY id ASC'))
+    .map(obj => ({
+      id: obj.id as number,
+      real: { fr: (obj.real_fr as string)||'', en: (obj.real_en as string)||'', ar: (obj.real_ar as string)||'' },
+      fake: { fr: (obj.fake_fr as string)||'', en: (obj.fake_en as string)||'', ar: (obj.fake_ar as string)||'' }
+    }));
+}
+
 function getAllWords(): Array<{ real: Record<string, string>; fake: Record<string, string> }> {
   return rowsToArray<Record<string, unknown>>(exec('SELECT * FROM impostor_words ORDER BY id ASC'))
     .map(obj => ({
@@ -535,6 +547,28 @@ function addWord(data: { real: Record<string, string>; fake: Record<string, stri
     [(data.real.fr||'').trim(), (data.real.en||'').trim(), (data.real.ar||'').trim(),
      (data.fake.fr||'').trim(), (data.fake.en||'').trim(), (data.fake.ar||'').trim()]);
   save();
+}
+
+function updateWord(id: number, data: { real: Record<string, string>; fake: Record<string, string> }): void {
+  run('UPDATE impostor_words SET real_fr=?,real_en=?,real_ar=?,fake_fr=?,fake_en=?,fake_ar=? WHERE id=?',
+    [(data.real.fr||'').trim(), (data.real.en||'').trim(), (data.real.ar||'').trim(),
+     (data.fake.fr||'').trim(), (data.fake.en||'').trim(), (data.fake.ar||'').trim(), id]);
+  save();
+}
+
+function deleteWord(id: number): void {
+  run('DELETE FROM impostor_words WHERE id=?', [id]);
+  save();
+}
+
+function getWord(id: number): { real: Record<string, string>; fake: Record<string, string> } | null {
+  const r = exec('SELECT * FROM impostor_words WHERE id=?', [id]);
+  const row = firstRow<Record<string, unknown>>(r);
+  if (!row) return null;
+  return {
+    real: { fr: (row.real_fr as string)||'', en: (row.real_en as string)||'', ar: (row.real_ar as string)||'' },
+    fake: { fr: (row.fake_fr as string)||'', en: (row.fake_en as string)||'', ar: (row.fake_ar as string)||'' }
+  };
 }
 
 function getRandomWord(lang: string = 'fr'): { real: string; fake: string } | null {
@@ -561,6 +595,6 @@ export {
   getLeaderboard,
   getUserStats, getImpostorStats,
   getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion,
-  getAllWords, addWord, getRandomWord,
+  getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord,
   getBets, getImpostorPlayers, getImpostorPoints
 };

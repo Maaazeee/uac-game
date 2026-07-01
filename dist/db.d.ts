@@ -43,6 +43,7 @@ export interface ImpostorRound {
     impostorId: string;
     phase: string;
     winner: string;
+    deadline: number | null;
     createdBy: string;
     createdAt: string;
     players: Record<string, ImpostorPlayer>;
@@ -121,6 +122,7 @@ declare function createImpostorRound(data: {
     id: number;
     realWord: string;
     fakeWord: string;
+    deadline: number | null;
     createdBy: string;
     createdAt: string;
 }): ImpostorRound | null;
@@ -151,6 +153,11 @@ declare function getRandomQuestion(lang?: string): {
     a: number;
     r: string;
 };
+declare function getAllWordsWithId(): Array<{
+    id: number;
+    real: Record<string, string>;
+    fake: Record<string, string>;
+}>;
 declare function getAllWords(): Array<{
     real: Record<string, string>;
     fake: Record<string, string>;
@@ -159,11 +166,16 @@ declare function addWord(data: {
     real: Record<string, string>;
     fake: Record<string, string>;
 }): void;
+declare function updateWord(id: number, data: {
+    real: Record<string, string>;
+    fake: Record<string, string>;
+}): void;
+declare function deleteWord(id: number): void;
 declare function getRandomWord(lang?: string): {
     real: string;
     fake: string;
 } | null;
 declare function getLastRoundIds(count?: number): Record<string, unknown>[];
 declare function getLastImpostorRoundIds(count?: number): Record<string, unknown>[];
-export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, addWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
+export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
 //# sourceMappingURL=db.d.ts.map

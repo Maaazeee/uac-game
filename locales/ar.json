@@ -56,6 +56,9 @@
     "time_minutes": "د",
     "time_seconds": "ث",
     "time_up": "انتهى الوقت!",
+    "tiebreaker_rule": "في حالة التعادل، الأقرب دون تجاوز يفوز.",
+    "new_round": "سؤال جديد متاح!",
+    "round_revealed": "تم كشف الإجابات!",
     "footer": "UAC — المجتمع الجزائري"
   },
   "leaderboard": {
@@ -171,6 +174,8 @@
     "already_voted": "صوت بالفعل",
     "invalid_target": "لاعب غير صالح",
     "cannot_self_vote": "لا يمكنك التصويت لنفسك",
+    "time_remaining": "الوقت المتبقي",
+    "need_min_players": "يلزم 3 لاعبين على الأقل لتعيين المحتال",
     "footer": "UAC — لعبة المحتال"
   },
   "admin_impostor": {
@@ -204,7 +209,39 @@
     "voting_started": "مرحلة التصويت",
     "revealed": "تم كشف النتائج",
     "players_join_first": "يجب على اللاعبين الانضمام أولاً",
+    "duration_label": "الحد الزمني (اختياري)",
+    "no_duration": "بدون حد",
+    "minutes": "د",
+    "manage_words": "إدارة الكلمات",
     "footer": "UAC — إدارة المحتال"
+  },
+  "admin_words": {
+    "title": "الكلمات - UAC",
+    "heading": "بنك الكلمات",
+    "sub": "أضف أو عدل أو احذف أزواج الكلمات للعبة المحتال",
+    "add": "إضافة زوج",
+    "edit": "تعديل الزوج",
+    "real_label": "الكلمة الحقيقية",
+    "fake_label": "الكلمة المزيفة (المحتال)",
+    "real_placeholder": "الكلمة الحقيقية...",
+    "fake_placeholder": "الكلمة المزيفة...",
+    "real_placeholder_en": "Real word...",
+    "fake_placeholder_en": "Fake word...",
+    "real_placeholder_ar": "الكلمة الحقيقية...",
+    "fake_placeholder_ar": "الكلمة المزيفة...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "list": "أزواج الكلمات",
+    "loading": "جارٍ التحميل...",
+    "empty": "لا توجد كلمات في البنك",
+    "added": "تمت إضافة الزوج!",
+    "updated": "تم تعديل الزوج!",
+    "deleted": "تم حذف الزوج",
+    "delete_confirm": "حذف هذا الزوج؟",
+    "real_required": "الكلمة الحقيقية مطلوبة",
+    "fake_required": "الكلمة المزيفة مطلوبة",
+    "error": "خطأ في التحميل",
+    "footer": "UAC — بنك الكلمات"
   },
   "profile": {
     "title": "الملف الشخصي - UAC",
@@ -258,6 +295,7 @@
     "no_round_found": "لا توجد جولة",
     "not_member_title": "تم رفض الوصول",
     "not_member": "يجب أن تكون عضواً في سيرفر UAC على ديسكورد لتسجيل الدخول. انضم إلينا أولاً!",
-    "time_up": "انتهى الوقت!"
+    "time_up": "انتهى الوقت!",
+    "internal": "خطأ داخلي في الخادم"
   }
 }

@@ -56,6 +56,9 @@
     "time_minutes": "m",
     "time_seconds": "s",
     "time_up": "Temps écoulé !",
+    "tiebreaker_rule": "En cas d'égalité, le plus proche sans dépasser l'emporte.",
+    "new_round": "Nouvelle question disponible !",
+    "round_revealed": "Réponses dévoilées !",
     "footer": "UAC — Underground Algerian Community"
   },
   "leaderboard": {
@@ -171,6 +174,8 @@
     "already_voted": "Déjà voté",
     "invalid_target": "Joueur invalide",
     "cannot_self_vote": "Tu ne peux pas voter pour toi-même",
+    "time_remaining": "Temps restant",
+    "need_min_players": "Il faut au moins 3 joueurs pour désigner l'imposteur",
     "footer": "UAC — Jeu de l'Imposteur"
   },
   "admin_impostor": {
@@ -204,7 +209,39 @@
     "voting_started": "Phase de vote",
     "revealed": "Résultats dévoilés",
     "players_join_first": "Les joueurs doivent rejoindre",
+    "duration_label": "Durée limite (optionnelle)",
+    "no_duration": "Pas de limite",
+    "minutes": "min",
+    "manage_words": "Gérer les mots",
     "footer": "UAC — Admin Imposteur"
+  },
+  "admin_words": {
+    "title": "Mots - UAC",
+    "heading": "Banque de mots",
+    "sub": "Ajoute, modifie ou supprime les paires de mots pour le Mot Imposteur",
+    "add": "Ajouter une paire",
+    "edit": "Modifier la paire",
+    "real_label": "Vrai mot",
+    "fake_label": "Faux mot (imposteur)",
+    "real_placeholder": "Mot réel...",
+    "fake_placeholder": "Mot imposteur...",
+    "real_placeholder_en": "Real word...",
+    "fake_placeholder_en": "Fake word...",
+    "real_placeholder_ar": "الكلمة الحقيقية...",
+    "fake_placeholder_ar": "الكلمة المزيفة...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "list": "Paires de mots",
+    "loading": "Chargement...",
+    "empty": "Aucun mot dans la banque",
+    "added": "Paire ajoutée !",
+    "updated": "Paire modifiée !",
+    "deleted": "Paire supprimée",
+    "delete_confirm": "Supprimer cette paire de mots ?",
+    "real_required": "Vrai mot requis",
+    "fake_required": "Faux mot requis",
+    "error": "Erreur de chargement",
+    "footer": "UAC — Banque de mots"
   },
   "profile": {
     "title": "Profil - UAC",
@@ -258,6 +295,7 @@
     "no_round_found": "Aucune manche",
     "not_member_title": "Accès refusé",
     "not_member": "Tu dois être membre du serveur Discord UAC pour te connecter. Rejoins-nous d'abord !",
-    "time_up": "Le temps est écoulé !"
+    "time_up": "Le temps est écoulé !",
+    "internal": "Erreur interne du serveur"
   }
 }

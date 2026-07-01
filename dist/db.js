@@ -28,7 +28,10 @@ exports.updateQuestion = updateQuestion;
 exports.deleteQuestion = deleteQuestion;
 exports.getRandomQuestion = getRandomQuestion;
 exports.getAllWords = getAllWords;
+exports.getAllWordsWithId = getAllWordsWithId;
 exports.addWord = addWord;
+exports.updateWord = updateWord;
+exports.deleteWord = deleteWord;
 exports.getRandomWord = getRandomWord;
 exports.getBets = getBets;
 exports.getImpostorPlayers = getImpostorPlayers;
@@ -107,8 +110,12 @@ function createSchema() {
     id INTEGER PRIMARY KEY, realWord TEXT NOT NULL,
     fakeWord TEXT NOT NULL, impostorId TEXT DEFAULT '',
     phase TEXT DEFAULT 'submission', winner TEXT DEFAULT '',
-    createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
+    deadline INTEGER, createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
   )`);
+    try {
+        run('ALTER TABLE impostor_rounds ADD COLUMN deadline INTEGER');
+    }
+    catch (e) { /* column may already exist */ }
     run(`CREATE TABLE IF NOT EXISTS impostor_players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     roundId INTEGER NOT NULL, userId TEXT NOT NULL,
@@ -328,6 +335,7 @@ function getImpostorState() {
         return null;
     const result = {
         ...round,
+        deadline: round.deadline || null,
         votes: {},
         players: {},
         points: {}
@@ -343,7 +351,7 @@ function getImpostorState() {
     return result;
 }
 function createImpostorRound(data) {
-    run('INSERT INTO impostor_rounds(id,realWord,fakeWord,impostorId,phase,winner,createdBy,createdAt) VALUES(?,?,?,?,?,?,?,?)', [data.id, data.realWord, data.fakeWord, '', 'submission', '', data.createdBy || '', data.createdAt || '']);
+    run('INSERT INTO impostor_rounds(id,realWord,fakeWord,impostorId,phase,winner,deadline,createdBy,createdAt) VALUES(?,?,?,?,?,?,?,?,?)', [data.id, data.realWord, data.fakeWord, '', 'submission', '', data.deadline, data.createdBy || '', data.createdAt || '']);
     save();
     return getImpostorState();
 }
@@ -517,6 +525,14 @@ function getRandomQuestion(lang = 'fr') {
     return { q: row['q_' + l] || row.q_fr, a: row.a, r: row['r_' + l] || row.r_fr };
 }
 // --- Impostor Words ---
+function getAllWordsWithId() {
+    return rowsToArray(exec('SELECT * FROM impostor_words ORDER BY id ASC'))
+        .map(obj => ({
+        id: obj.id,
+        real: { fr: obj.real_fr || '', en: obj.real_en || '', ar: obj.real_ar || '' },
+        fake: { fr: obj.fake_fr || '', en: obj.fake_en || '', ar: obj.fake_ar || '' }
+    }));
+}
 function getAllWords() {
     return rowsToArray(exec('SELECT * FROM impostor_words ORDER BY id ASC'))
         .map(obj => ({
@@ -528,6 +544,25 @@ function addWord(data) {
     run('INSERT INTO impostor_words(real_fr,real_en,real_ar,fake_fr,fake_en,fake_ar) VALUES(?,?,?,?,?,?)', [(data.real.fr || '').trim(), (data.real.en || '').trim(), (data.real.ar || '').trim(),
         (data.fake.fr || '').trim(), (data.fake.en || '').trim(), (data.fake.ar || '').trim()]);
     save();
+}
+function updateWord(id, data) {
+    run('UPDATE impostor_words SET real_fr=?,real_en=?,real_ar=?,fake_fr=?,fake_en=?,fake_ar=? WHERE id=?', [(data.real.fr || '').trim(), (data.real.en || '').trim(), (data.real.ar || '').trim(),
+        (data.fake.fr || '').trim(), (data.fake.en || '').trim(), (data.fake.ar || '').trim(), id]);
+    save();
+}
+function deleteWord(id) {
+    run('DELETE FROM impostor_words WHERE id=?', [id]);
+    save();
+}
+function getWord(id) {
+    const r = exec('SELECT * FROM impostor_words WHERE id=?', [id]);
+    const row = firstRow(r);
+    if (!row)
+        return null;
+    return {
+        real: { fr: row.real_fr || '', en: row.real_en || '', ar: row.real_ar || '' },
+        fake: { fr: row.fake_fr || '', en: row.fake_en || '', ar: row.fake_ar || '' }
+    };
 }
 function getRandomWord(lang = 'fr') {
     const r = exec('SELECT * FROM impostor_words ORDER BY RANDOM() LIMIT 1');

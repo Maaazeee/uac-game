@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title><%= t('admin_words.title') %></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0}
+.top-bar{background:#0f0f1a;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{font-size:20px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:900px;margin:0 auto;padding:24px 16px}
+h1{font-size:22px;font-weight:900;margin-bottom:4px}
+h1 span{color:#c084fc}
+.sub{color:#888;font-size:13px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;align-items:start}
+@media(max-width:750px){.grid{grid-template-columns:1fr}}
+.card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a}
+.card h2{font-size:15px;margin-bottom:12px;color:#c084fc}
+.lang-tabs{display:flex;gap:4px;margin-bottom:8px}
+.lang-tab{background:none;border:1px solid #333;color:#888;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+.lang-tab.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.lang-fields .field-group{display:none}
+.lang-fields .field-group.active{display:block}
+.card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+.card input{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:8px;font-family:inherit}
+.card input:focus{border-color:#a855f7}
+.lang-badge{font-size:10px;color:#888;text-transform:uppercase;margin-bottom:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
+.btn:hover{background:#9333ea}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-red{background:#f04747}
+.btn-red:hover{background:#d33a3a}
+.btn-sm{padding:5px 10px;font-size:11px}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:13px}
+.alert-success{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474722;border:1px solid #f04747;color:#fca5a5}
+.w-item{background:#0f0f1a;border-radius:8px;padding:12px 14px;margin-bottom:6px;border:1px solid #1e1e3a;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+.w-item .content{flex:1;min-width:0}
+.w-item .w-langs{display:flex;gap:12px;flex-wrap:wrap}
+.w-item .w-lang{flex:1;min-width:0;background:#16213e44;border-radius:6px;padding:6px}
+.w-item .w-lang-label{font-size:10px;color:#555;text-transform:uppercase}
+.w-item .w-text{font-weight:600;word-break:break-word;font-size:13px}
+.w-item .w-meta{color:#888;font-size:12px;margin-top:4px}
+.w-item .w-pair{display:flex;gap:8px}
+.w-item .w-pair .real{color:#43b581}
+.w-item .w-pair .fake{color:#f04747}
+.w-item .w-actions{display:flex;gap:4px;flex-shrink:0}
+.w-count{color:#888;font-size:13px}
+.empty{text-align:center;color:#888;padding:30px;font-size:14px}
+footer{text-align:center;padding:30px;color:#555;font-size:13px}
+[dir="rtl"] .w-lang{text-align:right}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo"><span>UAC</span> Mots</div>
+    <div class="nav-links">
+      <a href="/admin/impostor" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+    </div>
+  </div>
+  <div class="user-info">
+    <a href="/profile"><img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt=""></a>
+    <a href="/profile" style="color:#e0e0e0;text-decoration:none"><span><%= user.globalName %></span></a>
+    <a href="/logout"><%= t('nav.logout') %></a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>📚 <span><%= t('admin_words.heading') %></span></h1>
+  <p class="sub"><%- t('admin_words.sub') %></p>
+
+  <div id="error" class="alert alert-error" style="display:none"></div>
+  <div id="success" class="alert alert-success" style="display:none"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 id="form-title">➕ <%= t('admin_words.add') %></h2>
+
+      <div class="lang-tabs">
+        <button class="lang-tab active" data-lang="fr" onclick="switchLang('fr')">FR</button>
+        <button class="lang-tab" data-lang="en" onclick="switchLang('en')">EN</button>
+        <button class="lang-tab" data-lang="ar" onclick="switchLang('ar')">AR</button>
+      </div>
+
+      <div class="lang-fields">
+        <div class="field-group active" data-lang="fr">
+          <label><%= t('admin_words.real_label') %></label>
+          <input id="real-fr" placeholder="<%= t('admin_words.real_placeholder') %>">
+          <label><%= t('admin_words.fake_label') %></label>
+          <input id="fake-fr" placeholder="<%= t('admin_words.fake_placeholder') %>">
+        </div>
+        <div class="field-group" data-lang="en">
+          <label><%= t('admin_words.real_label') %></label>
+          <input id="real-en" placeholder="<%= t('admin_words.real_placeholder_en') %>">
+          <label><%= t('admin_words.fake_label') %></label>
+          <input id="fake-en" placeholder="<%= t('admin_words.fake_placeholder_en') %>">
+        </div>
+        <div class="field-group" data-lang="ar">
+          <label><%= t('admin_words.real_label') %></label>
+          <input id="real-ar" placeholder="<%= t('admin_words.real_placeholder_ar') %>">
+          <label><%= t('admin_words.fake_label') %></label>
+          <input id="fake-ar" placeholder="<%= t('admin_words.fake_placeholder_ar') %>">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-green" id="save-btn" onclick="saveWord()">💾 <%= t('admin_words.save') %></button>
+        <button class="btn btn-sm" id="cancel-btn" onclick="cancelEdit()" style="display:none"><%= t('admin_words.cancel') %></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><%= t('admin_words.list') %> <span id="w-count" class="w-count"></span></h2>
+      <div id="w-list"><p style="color:#888;font-size:13px"><%= t('admin_words.loading') %></p></div>
+    </div>
+  </div>
+</div>
+
+<footer><%= t('admin_words.footer') %></footer>
+
+<script>
+var editingId = null;
+
+function switchLang(lang) {
+  document.querySelectorAll('.lang-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.field-group').forEach(function(g) { g.classList.remove('active'); });
+  document.querySelector('.lang-tab[data-lang="' + lang + '"]').classList.add('active');
+  document.querySelector('.field-group[data-lang="' + lang + '"]').classList.add('active');
+}
+
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function getFormData() {
+  return {
+    real: {
+      fr: document.getElementById('real-fr').value.trim(),
+      en: document.getElementById('real-en').value.trim(),
+      ar: document.getElementById('real-ar').value.trim()
+    },
+    fake: {
+      fr: document.getElementById('fake-fr').value.trim(),
+      en: document.getElementById('fake-en').value.trim(),
+      ar: document.getElementById('fake-ar').value.trim()
+    }
+  };
+}
+
+function setFormData(data) {
+  document.getElementById('real-fr').value = data.real.fr || '';
+  document.getElementById('real-en').value = data.real.en || '';
+  document.getElementById('real-ar').value = data.real.ar || '';
+  document.getElementById('fake-fr').value = data.fake.fr || '';
+  document.getElementById('fake-en').value = data.fake.en || '';
+  document.getElementById('fake-ar').value = data.fake.ar || '';
+}
+
+function clearForm() {
+  document.getElementById('real-fr').value = '';
+  document.getElementById('real-en').value = '';
+  document.getElementById('real-ar').value = '';
+  document.getElementById('fake-fr').value = '';
+  document.getElementById('fake-en').value = '';
+  document.getElementById('fake-ar').value = '';
+  editingId = null;
+  document.getElementById('form-title').innerHTML = '➕ <%= t("admin_words.add") %>';
+  document.getElementById('save-btn').innerHTML = '💾 <%= t("admin_words.save") %>';
+  document.getElementById('cancel-btn').style.display = 'none';
+}
+
+function cancelEdit() { clearForm(); }
+
+async function saveWord() {
+  const data = getFormData();
+  if (!data.real.fr) { showError('<%= t("admin_words.real_required") %>'); return; }
+  if (!data.fake.fr) { showError('<%= t("admin_words.fake_required") %>'); return; }
+
+  try {
+    if (editingId) {
+      await api('/api/admin/impostor-words', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, ...data })
+      });
+      showSuccess('✅ <%= t("admin_words.updated") %>');
+    } else {
+      await api('/api/admin/impostor-words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      showSuccess('✅ <%= t("admin_words.added") %>');
+    }
+    clearForm();
+    loadWords();
+  } catch(e) { showError(e.message); }
+}
+
+function editWord(id) {
+  api('/api/admin/impostor-words').then(function(words) {
+    var word = words.find(function(w) { return w.id === id; });
+    if (!word) { showError('Mot introuvable'); return; }
+    setFormData(word);
+    editingId = id;
+    document.getElementById('form-title').innerHTML = '✏️ <%= t("admin_words.edit") %>';
+    document.getElementById('save-btn').innerHTML = '💾 <%= t("admin_words.save") %>';
+    document.getElementById('cancel-btn').style.display = 'inline-flex';
+  }).catch(function(e) { showError(e.message); });
+}
+
+async function deleteWord(id) {
+  if (!confirm('<%= t("admin_words.delete_confirm") %>')) return;
+  try {
+    await api('/api/admin/impostor-words/' + id, { method: 'DELETE' });
+    showSuccess('🗑️ <%= t("admin_words.deleted") %>');
+    loadWords();
+  } catch(e) { showError(e.message); }
+}
+
+function renderWord(data) {
+  var langs = ['fr', 'en', 'ar'];
+  return langs.map(function(l) {
+    if (!data.real[l]) return '';
+    return '<div class="w-lang">' +
+      '<div class="w-lang-label">' + l.toUpperCase() + '</div>' +
+      '<div class="w-pair">' +
+        '<span class="real">🟢 ' + data.real[l] + '</span>' +
+        '<span class="fake">🔴 ' + data.fake[l] + '</span>' +
+      '</div>' +
+    '</div>';
+  }).filter(Boolean).join('');
+}
+
+async function loadWords() {
+  try {
+    const words = await api('/api/admin/impostor-words');
+    const el = document.getElementById('w-list');
+    document.getElementById('w-count').textContent = '(' + words.length + ')';
+    if (words.length === 0) {
+      el.innerHTML = '<div class="empty">📭 <%= t("admin_words.empty") %></div>';
+      return;
+    }
+    el.innerHTML = words.map(function(w) {
+      return '<div class="w-item">' +
+        '<div class="content">' +
+          '<div class="w-langs">' + renderWord(w) + '</div>' +
+        '</div>' +
+        '<div class="w-actions">' +
+          '<button class="btn btn-sm" onclick="editWord(' + w.id + ')">✏️</button>' +
+          '<button class="btn btn-sm btn-red" onclick="deleteWord(' + w.id + ')">🗑️</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('w-list').innerHTML = '<p style="color:#f04747"><%= t("admin_words.error") %></p>';
+  }
+}
+
+loadWords();
+</script>
+</body>
+</html>
