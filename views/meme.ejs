@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= t('meme.title') %></title>
+<script src="/js/sfx.js"></script>
+<script src="/js/confetti.js"></script>
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+::selection{background:#a855f766;color:#fff}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#0f0f1a}
+::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#3a3a5a}
+body{font-family:'Inter','Tajawal',sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f0f1a 100%);color:#e0e0e0;min-height:100vh}
+.top-bar{background:rgba(15,15,26,.95);backdrop-filter:blur(12px);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed;position:sticky;top:0;z-index:100}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{font-size:20px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600;transition:.2s}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:.2s;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.lang-btn.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #7c3aed;transition:.2s}
+.user-info img:hover{border-color:#c084fc;transform:scale(1.1)}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:800px;margin:0 auto;padding:24px 16px;text-align:center;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.phase-badge{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block;margin-bottom:12px}
+.phase-submission{background:#a855f722;border:1px solid #a855f7;color:#c084fc}
+.phase-voting{background:#f59e0b22;border:1px solid #f59e0b;color:#fbbf24}
+.phase-revealed{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.card{background:#16213e;border-radius:12px;padding:24px;margin-bottom:14px;border:1px solid #1e2a4a;text-align:left;transition:.3s}
+.card:hover{border-color:#7c3aed}
+.card h2{font-size:16px;font-weight:700;margin-bottom:8px;color:#c084fc}
+.theme-display{background:#0f0f1a;border:2px solid #a855f7;border-radius:12px;padding:20px;text-align:center;margin:12px 0}
+.theme-display .theme{font-size:28px;font-weight:900;color:#c084fc}
+.theme-display .hint{font-size:13px;color:#888;margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;transition:.2s;font-family:inherit}
+.btn:hover{background:#9333ea}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-sm{padding:6px 12px;font-size:12px}
+.input-field{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:12px;border-radius:8px;font-size:16px;outline:none;width:100%;font-family:inherit;transition:.2s}
+.input-field:focus{border-color:#a855f7}
+.gif-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
+.gif-card{background:#0f0f1a;border:2px solid #1e1e3a;border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s;position:relative}
+.gif-card:hover{border-color:#a855f7;transform:scale(1.02)}
+.gif-card.selected{border-color:#43b581;box-shadow:0 0 15px #43b58144}
+.gif-card img{width:100%;height:140px;object-fit:cover;display:block}
+.gif-card .label{padding:6px 8px;font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gif-card .check{position:absolute;top:6px;right:6px;background:#43b581;color:#fff;border-radius:50%;width:24px;height:24px;display:none;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.gif-card.selected .check{display:flex}
+.vote-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:12px 0}
+.vote-card{background:#0f0f1a;border:2px solid #1e1e3a;border-radius:10px;overflow:hidden;cursor:pointer;transition:.2s}
+.vote-card:hover{border-color:#f59e0b;transform:scale(1.02)}
+.vote-card.selected{border-color:#43b581;box-shadow:0 0 15px #43b58144}
+.vote-card img{width:100%;height:150px;object-fit:cover;display:block}
+.vote-card .info{padding:8px;font-size:12px;color:#888;text-align:center}
+.spinner{width:36px;height:36px;border:3px solid #2a2a4a;border-top:3px solid #a855f7;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.waiting{color:#888;padding:20px;text-align:center}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:14px}
+.alert-info{background:#a855f733;border:1px solid #a855f7;color:#d8b4fe}
+.alert-success{background:#43b58133;border:1px solid #43b581;color:#6ee7b7}
+.alert-error{background:#f0474733;border:1px solid #f04747;color:#fca5a5}
+.alert-warning{background:#f59e0b22;border:1px solid #f59e0b;color:#fbbf24}
+.result-box{background:#0f0f1a;border-radius:12px;padding:20px;text-align:center;margin:12px 0}
+.result-box .big{font-size:28px;font-weight:900;margin-bottom:4px;animation:revealPop .6s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes revealPop{0%{opacity:0;transform:scale(.3) rotate(-10deg)}50%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+.result-box .winner{color:#ffd700}
+.result-box .label{color:#888;font-size:13px}
+.winner-badge{display:inline-block;background:#ffd70022;color:#ffd700;padding:2px 10px;border-radius:6px;font-weight:700;font-size:13px}
+.reveal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin:12px 0}
+.reveal-card{background:#0f0f1a;border:2px solid #1e1e3a;border-radius:10px;overflow:hidden;transition:.2s}
+.reveal-card.winner{border-color:#ffd700;box-shadow:0 0 20px #ffd70033}
+.reveal-card img{width:100%;height:150px;object-fit:cover;display:block}
+.reveal-card .info{padding:8px;text-align:center}
+.reveal-card .info .name{font-weight:600;font-size:13px}
+.reveal-card .info .votes{font-size:12px;color:#888}
+.toast-container{position:fixed;top:80px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:350px}
+.toast{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;animation:slideInRight .3s ease;box-shadow:0 4px 20px #00000044}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+.toast-info{background:#a855f7;color:#fff}
+.toast-success{background:#43b581;color:#fff}
+.toast-warning{background:#f59e0b;color:#000}
+.top-links{display:flex;gap:12px;justify-content:center;margin-bottom:16px;font-size:13px}
+.top-links a{color:#888;text-decoration:none;font-weight:600}
+.top-links a:hover{color:#c084fc}
+.selected-preview{margin-top:12px;text-align:center;padding:12px;background:#0f0f1a;border-radius:8px;border:1px solid #43b581}
+.selected-preview img{max-height:200px;border-radius:6px}
+.selected-preview .label{color:#888;font-size:12px;margin-top:6px}
+.search-wrap{position:relative}
+.search-wrap .clear-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;cursor:pointer;font-size:18px;padding:2px 6px}
+.search-hint{font-size:12px;color:#888;margin-top:6px}
+footer{text-align:center;padding:30px;color:#555;font-size:13px}
+@media(max-width:500px){.gif-grid{grid-template-columns:repeat(2,1fr)}}
+[dir="rtl"] .card{text-align:right}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo"><span>UAC</span> Mème Royale</div>
+    <div class="nav-links">
+      <a href="/games" style="font-size:13px"><%= t('nav.back') %></a>
+      <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
+      <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+      <button class="lang-btn" id="mute-btn" onclick="toggleMute()" style="font-size:14px">🔊</button>
+    </div>
+  </div>
+  <div class="user-info">
+    <% if (locals.user) { %>
+      <a href="/profile"><img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt=""></a>
+      <a href="/profile" style="color:#e0e0e0;text-decoration:none"><span><%= user.globalName %></span></a>
+      <% if (user.isAdmin) { %><span style="color:#a855f7;font-size:11px">(admin)</span><% } %>
+      <a href="/logout"><%= t('nav.logout') %></a>
+    <% } %>
+  </div>
+</div>
+
+<div class="container">
+  <div class="toast-container" id="toast-container"></div>
+  <div class="top-links">
+    <a href="/leaderboard">🏆 <%= t('nav.leaderboard') %></a>
+  </div>
+
+  <div id="app">
+    <div v-if="loading" class="waiting">
+      <div class="spinner"></div>
+      <p>{{ translations.loading }}</p>
+    </div>
+
+    <!-- No round -->
+    <div v-if="!loading && !round">
+      <div class="card" style="text-align:center;padding:40px">
+        <div style="font-size:48px;margin-bottom:12px">🎭</div>
+        <h2>{{ translations.meme_waiting_title }}</h2>
+        <p style="color:#888;margin-top:8px">{{ translations.meme_waiting_desc }}</p>
+      </div>
+    </div>
+
+    <!-- Active round -->
+    <div v-if="round && !loading">
+
+      <div class="phase-badge" :class="'phase-' + round.phase">
+        {{ phaseLabel }}
+      </div>
+
+      <!-- Theme display -->
+      <div class="card">
+        <div class="label" style="color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">{{ translations.meme_theme }}</div>
+        <div class="theme-display">
+          <div class="theme">{{ round.theme }}</div>
+        </div>
+      </div>
+
+      <!-- Submission phase -->
+      <div class="card" v-if="round.phase === 'submission'">
+        <h2>{{ translations.meme_your_meme }}</h2>
+        <p style="color:#888;font-size:13px;margin-bottom:12px">{{ translations.meme_search_hint }}</p>
+        <div class="search-wrap">
+          <input class="input-field" v-model="searchQuery" :placeholder="translations.meme_search_placeholder" @input="debounceSearch" style="padding-right:36px">
+          <button v-if="searchQuery" class="clear-btn" @click="clearSearch">×</button>
+        </div>
+        <div class="search-hint" v-if="!searchQuery">{{ translations.meme_type_to_search }}</div>
+
+        <div v-if="searchResults.length > 0" class="gif-grid">
+          <div v-for="gif in searchResults" class="gif-card" :class="{selected: selectedGif && selectedGif.id === gif.id}" :key="gif.id" @click="selectGif(gif)">
+            <img :src="gif.preview" :alt="gif.title" loading="lazy">
+            <div class="label">{{ gif.title || '&nbsp;' }}</div>
+            <div class="check">✓</div>
+          </div>
+        </div>
+
+        <div v-if="searching" class="waiting" style="padding:12px">
+          <div class="spinner" style="width:24px;height:24px;margin:0 auto"></div>
+        </div>
+
+        <div v-if="selectedGif" class="selected-preview">
+          <img :src="selectedGif.preview" :alt="selectedGif.title">
+          <div class="label">{{ translations.meme_selected }}</div>
+        </div>
+
+        <button v-if="selectedGif && !submitted" class="btn btn-green" @click="submitMeme" style="margin-top:12px;width:100%">🚀 {{ translations.meme_submit }}</button>
+        <div v-if="submitted" class="alert alert-success" style="text-align:center;margin-top:12px">✅ {{ translations.meme_submitted }}</div>
+      </div>
+
+      <!-- Voting phase -->
+      <div class="card" v-if="round.phase === 'voting'">
+        <h2>{{ translations.meme_vote_title }}</h2>
+        <p style="color:#888;font-size:13px;margin-bottom:12px">{{ translations.meme_vote_hint }}</p>
+        <div v-if="!voted" class="vote-grid">
+          <div v-for="(sub, idx) in roundSubmissions" class="vote-card" :class="{selected: selectedVote === sub.userId}" :key="sub.userId" @click="selectedVote = sub.userId">
+            <img :src="sub.gifPreview || sub.gifUrl" :alt="'Mème ' + (idx+1)" loading="lazy">
+            <div class="info">{{ translations.meme_meme }} #{{ idx+1 }}</div>
+          </div>
+        </div>
+        <div v-else class="alert alert-info" style="text-align:center">✅ {{ translations.meme_voted }}</div>
+        <button v-if="!voted && selectedVote" class="btn" @click="castVote" style="margin-top:10px;width:100%">🗳️ {{ translations.meme_vote_btn }}</button>
+      </div>
+
+      <!-- Revealed phase -->
+      <div class="card" v-if="round.phase === 'revealed'">
+        <div class="result-box">
+          <div class="label">{{ translations.meme_result }}</div>
+          <div class="big winner">🎉 {{ getWinnerName() }}</div>
+          <div style="color:#888;font-size:13px;margin-top:4px">{{ translations.meme_wins }}</div>
+        </div>
+
+        <div class="reveal-grid">
+          <div v-for="sub in roundSubmissions" class="reveal-card" :class="{winner: sub.userId === round.winnerId}" :key="sub.userId">
+            <img :src="sub.gifPreview || sub.gifUrl" :alt="sub.username" loading="lazy">
+            <div class="info">
+              <div class="name">
+                <span v-if="sub.userId === round.winnerId" class="winner-badge">👑</span>
+                {{ sub.username }}
+              </div>
+              <div class="votes">{{ votes[sub.userId] || 0 }} {{ translations.meme_votes }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submissions count -->
+      <div class="card" style="text-align:center;padding:12px" v-if="round.phase !== 'revealed'">
+        <span style="color:#888;font-size:13px">{{ translations.meme_participants }}: <strong style="color:#c084fc">{{ roundSubmissionCount }}</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer><%= t('meme.footer') %></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js"></script>
+<script>
+var translations = <%- JSON.stringify(locale.meme || locale) %>;
+</script>
+<script>
+var userId = '<%= user.id %>';
+var phaseNames = {
+  submission: '<%= t("meme.phase_submission") %>',
+  voting: '<%= t("meme.phase_voting") %>',
+  revealed: '<%= t("meme.phase_revealed") %>'
+};
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    round: null,
+    submissions: [],
+    votes: {},
+    loading: true,
+    searchQuery: '',
+    searchResults: [],
+    selectedGif: null,
+    submitted: false,
+    voted: false,
+    selectedVote: null,
+    searching: false,
+    searchTimer: null,
+    translations: window.translations,
+    userId: userId
+  },
+  computed: {
+    phaseLabel() { return phaseNames[this.round?.phase] || ''; },
+    roundSubmissions() {
+      if (!this.submissions) return [];
+      // Shuffle for voting anonymity, keep stable
+      return this.submissions.slice().sort((a, b) => a.userId.localeCompare(b.userId));
+    },
+    roundSubmissionCount() {
+      return this.submissions ? this.submissions.length : 0;
+    }
+  },
+  methods: {
+    async fetchState() {
+      try {
+        const res = await fetch('/api/meme/state');
+        const data = await res.json();
+        this.round = data.round;
+        this.submissions = data.submissions || [];
+        this.votes = data.votes || {};
+        this.submitted = data.iSubmitted || false;
+        this.voted = data.iVoted || false;
+        this.loading = false;
+        this.updateTitle();
+        // Detect reveal transition for sound + notification
+        if (data.round && data.round.phase === 'revealed') {
+          if (typeof playWin === 'function') playWin();
+          if (typeof fireConfetti === 'function') fireConfetti(4000);
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+            new Notification(translations.meme_revealed || 'Résultats !', { body: translations.meme_wins || 'Le meilleur mème a gagné' });
+          }
+        }
+      } catch(e) { this.loading = false; }
+    },
+    updateTitle() {
+      var t = 'UAC Mème';
+      if (this.round) {
+        if (this.round.phase === 'revealed') t = '🔓 ' + t;
+        else if (this.round.phase === 'voting') t = '🗳️ ' + t;
+        else t = '✍️ ' + t;
+      }
+      document.title = t;
+    },
+    debounceSearch() {
+      if (this.searchTimer) clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(() => this.searchGifs(), 400);
+    },
+    async searchGifs() {
+      const q = this.searchQuery.trim();
+      if (!q) { this.searchResults = []; return; }
+      this.searching = true;
+      try {
+        const res = await fetch('/api/meme/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        this.searchResults = data.results || [];
+      } catch(e) {}
+      this.searching = false;
+    },
+    selectGif(gif) {
+      this.selectedGif = this.selectedGif && this.selectedGif.id === gif.id ? null : gif;
+    },
+    clearSearch() {
+      this.searchQuery = '';
+      this.searchResults = [];
+      this.selectedGif = null;
+    },
+    async submitMeme() {
+      if (!this.selectedGif) return;
+      try {
+        const res = await fetch('/api/meme/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gifUrl: this.selectedGif.url, gifPreview: this.selectedGif.preview, gifTitle: this.selectedGif.title })
+        });
+        const data = await res.json();
+        if (data.error) { showToast(data.error, 'error'); return; }
+        this.submitted = true;
+        this.selectedGif = null;
+        this.searchResults = [];
+        this.searchQuery = '';
+        if (typeof playBet === 'function') playBet();
+        showToast(translations.meme_submitted || 'Mème soumis !', 'success');
+      } catch(e) { showToast(translations.meme_error || 'Erreur', 'error'); }
+    },
+    async castVote() {
+      if (!this.selectedVote) return;
+      try {
+        const res = await fetch('/api/meme/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetId: this.selectedVote })
+        });
+        const data = await res.json();
+        if (data.error) { showToast(data.error, 'error'); return; }
+        this.voted = true;
+        this.selectedVote = null;
+        if (typeof playVote === 'function') playVote();
+        showToast(translations.meme_voted || 'Vote envoyé !', 'success');
+      } catch(e) { showToast(translations.meme_error || 'Erreur', 'error'); }
+    },
+    getWinnerName() {
+      if (!this.round || !this.submissions) return '';
+      const w = this.submissions.find(s => s.userId === this.round.winnerId);
+      return w ? w.username : '';
+    }
+  },
+  mounted() {
+    this.fetchState();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
+    var socket = io();
+    socket.emit('register', userId);
+    var self = this;
+    socket.on('memeStart', function() { self.fetchState(); showToast(translations.meme_started || 'Mème Royale commencé !', 'info'); });
+    socket.on('memeSubmitted', function() { self.fetchState(); });
+    socket.on('memeVoting', function() { self.fetchState(); showToast(translations.meme_voting_started || 'Vote ouvert !', 'warning'); if (typeof playImpostorVoting === 'function') playImpostorVoting(); });
+    socket.on('memeRevealed', function() { self.fetchState(); });
+    socket.on('badgeUnlocked', function(data) {
+      if (data.badges && data.badges.length) {
+        showToast('🏆 ' + (translations.badge_unlocked || 'Badge débloqué') + ': ' + data.badges.join(', '), 'success');
+      }
+    });
+    setInterval(function() { this.fetchState(); }.bind(this), 30000);
+    updateMuteBtn();
+  }
+});
+
+function showToast(msg, type) {
+  var container = document.getElementById('toast-container');
+  if (!container) return;
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + (type || 'info');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function() { el.remove(); }, 300); }, 4000);
+}
+
+function toggleMute() {
+  var muted = getCookie('mute') === '1';
+  document.cookie = 'mute=' + (muted ? '0' : '1') + '; path=/; max-age=' + 365*24*60*60;
+  updateMuteBtn();
+}
+function updateMuteBtn() {
+  var btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getCookie('mute') === '1' ? '🔇' : '🔊';
+}
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+</script>
+</body>
+</html>

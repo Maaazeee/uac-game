@@ -50,6 +50,23 @@ export interface ImpostorRound {
     points: Record<string, number>;
     votes: Record<string, number>;
 }
+export interface MemeRound {
+    id: number;
+    theme: string;
+    phase: string;
+    winnerId: string;
+    deadline: number | null;
+    createdBy: string;
+    createdAt: string;
+}
+export interface MemeSubmission {
+    userId: string;
+    username: string;
+    avatar: string;
+    gifUrl: string;
+    gifPreview: string;
+    gifTitle: string;
+}
 export interface LeaderboardEntry {
     userId: string;
     username: string;
@@ -187,5 +204,36 @@ declare function getRandomWord(lang?: string): {
 } | null;
 declare function getLastRoundIds(count?: number): Record<string, unknown>[];
 declare function getLastImpostorRoundIds(count?: number): Record<string, unknown>[];
-export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getImpostorGameHistory, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
+declare function getMemeState(): {
+    round: MemeRound | null;
+    submissions: MemeSubmission[];
+    votes: Record<string, number>;
+};
+declare function createMemeRound(data: {
+    id: number;
+    theme: string;
+    deadline: number | null;
+    createdBy: string;
+    createdAt: string;
+}): void;
+declare function updateMemeRound(id: number, fields: Record<string, unknown>): void;
+declare function upsertMemeSubmission(roundId: number, sub: {
+    userId: string;
+    username: string;
+    avatar: string;
+    gifUrl: string;
+    gifPreview: string;
+    gifTitle: string;
+}): void;
+declare function memeSubmissionExists(roundId: number, userId: string): boolean;
+declare function addMemeVote(roundId: number, userId: string, targetId: string): void;
+declare function hasMemeVoted(roundId: number, userId: string): boolean;
+declare function addMemePoints(roundId: number, userId: string, points: number): void;
+declare function getMemeStats(userId: string): {
+    memeGames: number;
+    memeWins: number;
+    memePoints: number;
+};
+declare function getMemeVoteCounts(roundId: number): Record<string, number>;
+export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getImpostorGameHistory, getMemeState, createMemeRound, updateMemeRound, upsertMemeSubmission, memeSubmissionExists, addMemeVote, hasMemeVoted, addMemePoints, getMemeStats, getMemeVoteCounts, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
 //# sourceMappingURL=db.d.ts.map

@@ -45,6 +45,17 @@ export interface ImpostorRound {
   votes: Record<string, number>;
 }
 
+export interface MemeRound {
+  id: number; theme: string; phase: string;
+  winnerId: string; deadline: number | null;
+  createdBy: string; createdAt: string;
+}
+
+export interface MemeSubmission {
+  userId: string; username: string; avatar: string;
+  gifUrl: string; gifPreview: string; gifTitle: string;
+}
+
 export interface LeaderboardEntry {
   userId: string; username: string; avatar: string;
   points: number; wins: number; bets: number;
@@ -151,6 +162,27 @@ function createSchema(): void {
   run('CREATE INDEX IF NOT EXISTS idx_bets_userId ON bets(userId)');
   run('CREATE INDEX IF NOT EXISTS idx_rounds_revealed ON rounds(revealed)');
   run('CREATE INDEX IF NOT EXISTS idx_ip_roundId ON impostor_players(roundId)');
+  run(`CREATE TABLE IF NOT EXISTS meme_rounds (
+    id INTEGER PRIMARY KEY, theme TEXT NOT NULL,
+    phase TEXT DEFAULT 'submission', winnerId TEXT DEFAULT '',
+    deadline INTEGER, createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
+  )`);
+  run(`CREATE TABLE IF NOT EXISTS meme_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    username TEXT DEFAULT '', avatar TEXT DEFAULT '',
+    gifUrl TEXT DEFAULT '', gifPreview TEXT DEFAULT '',
+    gifTitle TEXT DEFAULT '', FOREIGN KEY(roundId) REFERENCES meme_rounds(id)
+  )`);
+  run(`CREATE TABLE IF NOT EXISTS meme_votes (
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    targetId TEXT NOT NULL, PRIMARY KEY(roundId, userId)
+  )`);
+  run(`CREATE TABLE IF NOT EXISTS meme_points (
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    points INTEGER DEFAULT 0, PRIMARY KEY(roundId, userId)
+  )`);
+  run('CREATE INDEX IF NOT EXISTS idx_ms_roundId ON meme_submissions(roundId)');
 }
 
 // --- Migration ---
@@ -613,6 +645,85 @@ function getLastImpostorRoundIds(count: number = 10): Record<string, unknown>[] 
   return rowsToArray<Record<string, unknown>>(exec('SELECT * FROM impostor_rounds ORDER BY id DESC LIMIT ?', [count]));
 }
 
+// --- Meme Royale ---
+
+function getMemeState(): { round: MemeRound | null; submissions: MemeSubmission[]; votes: Record<string, number> } {
+  const r = exec('SELECT * FROM meme_rounds ORDER BY id DESC LIMIT 1');
+  const row = firstRow<Record<string, unknown>>(r);
+  if (!row) return { round: null, submissions: [], votes: {} };
+  const round = { ...row, deadline: (row.deadline as number) || null } as unknown as MemeRound;
+  const subs = rowsToArray<Record<string, unknown>>(exec('SELECT userId,username,avatar,gifUrl,gifPreview,gifTitle FROM meme_submissions WHERE roundId = ?', [round.id]))
+    .map(s => ({ userId: s.userId as string, username: s.username as string, avatar: s.avatar as string, gifUrl: s.gifUrl as string, gifPreview: s.gifPreview as string, gifTitle: s.gifTitle as string }));
+  const voteRows = exec('SELECT targetId, COUNT(*) as cnt FROM meme_votes WHERE roundId = ? GROUP BY targetId', [round.id]);
+  const votes: Record<string, number> = {};
+  if (voteRows.length) for (const v of voteRows[0].values) votes[v[0] as string] = v[1] as number;
+  return { round, submissions: subs, votes };
+}
+
+function createMemeRound(data: { id: number; theme: string; deadline: number | null; createdBy: string; createdAt: string }): void {
+  run('INSERT INTO meme_rounds(id,theme,phase,winnerId,deadline,createdBy,createdAt) VALUES(?,?,?,?,?,?,?)',
+    [data.id, data.theme, 'submission', '', data.deadline, data.createdBy||'', data.createdAt||'']);
+  save();
+}
+
+function updateMemeRound(id: number, fields: Record<string, unknown>): void {
+  const sets: string[] = []; const vals: unknown[] = [];
+  for (const [k, v] of Object.entries(fields)) { sets.push(`${k}=?`); vals.push(v); }
+  vals.push(id);
+  run(`UPDATE meme_rounds SET ${sets.join(',')} WHERE id=?`, vals);
+  save();
+}
+
+function upsertMemeSubmission(roundId: number, sub: { userId: string; username: string; avatar: string; gifUrl: string; gifPreview: string; gifTitle: string }): void {
+  const existing = exec('SELECT id FROM meme_submissions WHERE roundId=? AND userId=?', [roundId, sub.userId]);
+  if (existing.length && existing[0].values.length) {
+    run('UPDATE meme_submissions SET username=?,avatar=?,gifUrl=?,gifPreview=?,gifTitle=? WHERE roundId=? AND userId=?',
+      [sub.username||'', sub.avatar||'', sub.gifUrl||'', sub.gifPreview||'', sub.gifTitle||'', roundId, sub.userId]);
+  } else {
+    run('INSERT INTO meme_submissions(roundId,userId,username,avatar,gifUrl,gifPreview,gifTitle) VALUES(?,?,?,?,?,?,?)',
+      [roundId, sub.userId, sub.username||'', sub.avatar||'', sub.gifUrl||'', sub.gifPreview||'', sub.gifTitle||'']);
+  }
+  save();
+}
+
+function memeSubmissionExists(roundId: number, userId: string): boolean {
+  const r = exec('SELECT id FROM meme_submissions WHERE roundId=? AND userId=?', [roundId, userId]);
+  return !!(r.length && r[0].values.length);
+}
+
+function addMemeVote(roundId: number, userId: string, targetId: string): void {
+  run('INSERT OR IGNORE INTO meme_votes(roundId,userId,targetId) VALUES(?,?,?)', [roundId, userId, targetId]);
+  save();
+}
+
+function hasMemeVoted(roundId: number, userId: string): boolean {
+  const r = exec('SELECT targetId FROM meme_votes WHERE roundId=? AND userId=?', [roundId, userId]);
+  return !!(r.length && r[0].values.length);
+}
+
+function addMemePoints(roundId: number, userId: string, points: number): void {
+  run('INSERT OR REPLACE INTO meme_points(roundId,userId,points) VALUES(?,?,?)', [roundId, userId, points]);
+  save();
+}
+
+function getMemeStats(userId: string): { memeGames: number; memeWins: number; memePoints: number } {
+  const r = exec(`
+    SELECT COUNT(*) as games, SUM(CASE WHEN mr.winnerId=? THEN 1 ELSE 0 END) as wins, COALESCE(SUM(mp.points),0) as pts
+    FROM meme_submissions ms JOIN meme_rounds mr ON ms.roundId = mr.id
+    LEFT JOIN meme_points mp ON ms.roundId = mp.roundId AND ms.userId = mp.userId
+    WHERE ms.userId = ? AND mr.phase = 'revealed'
+  `, [userId, userId]);
+  if (!r.length || !r[0].values.length) return { memeGames: 0, memeWins: 0, memePoints: 0 };
+  return { memeGames: r[0].values[0][0] as number, memeWins: r[0].values[0][1] as number, memePoints: r[0].values[0][2] as number };
+}
+
+function getMemeVoteCounts(roundId: number): Record<string, number> {
+  const r = exec('SELECT targetId, COUNT(*) as cnt FROM meme_votes WHERE roundId = ? GROUP BY targetId', [roundId]);
+  const counts: Record<string, number> = {};
+  if (r.length) for (const v of r[0].values) counts[v[0] as string] = v[1] as number;
+  return counts;
+}
+
 export {
   init, save,
   getUser, upsertUser,
@@ -620,6 +731,9 @@ export {
   getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds,
   getLeaderboard,
   getUserStats, getImpostorStats, getImpostorGameHistory,
+  getMemeState, createMemeRound, updateMemeRound,
+  upsertMemeSubmission, memeSubmissionExists,
+  addMemeVote, hasMemeVoted, addMemePoints, getMemeStats, getMemeVoteCounts,
   getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion,
   getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord,
   getBets, getImpostorPlayers, getImpostorPoints

@@ -23,6 +23,16 @@ exports.getLeaderboard = getLeaderboard;
 exports.getUserStats = getUserStats;
 exports.getImpostorStats = getImpostorStats;
 exports.getImpostorGameHistory = getImpostorGameHistory;
+exports.getMemeState = getMemeState;
+exports.createMemeRound = createMemeRound;
+exports.updateMemeRound = updateMemeRound;
+exports.upsertMemeSubmission = upsertMemeSubmission;
+exports.memeSubmissionExists = memeSubmissionExists;
+exports.addMemeVote = addMemeVote;
+exports.hasMemeVoted = hasMemeVoted;
+exports.addMemePoints = addMemePoints;
+exports.getMemeStats = getMemeStats;
+exports.getMemeVoteCounts = getMemeVoteCounts;
 exports.getAllQuestions = getAllQuestions;
 exports.addQuestion = addQuestion;
 exports.updateQuestion = updateQuestion;
@@ -142,6 +152,27 @@ function createSchema() {
     run('CREATE INDEX IF NOT EXISTS idx_bets_userId ON bets(userId)');
     run('CREATE INDEX IF NOT EXISTS idx_rounds_revealed ON rounds(revealed)');
     run('CREATE INDEX IF NOT EXISTS idx_ip_roundId ON impostor_players(roundId)');
+    run(`CREATE TABLE IF NOT EXISTS meme_rounds (
+    id INTEGER PRIMARY KEY, theme TEXT NOT NULL,
+    phase TEXT DEFAULT 'submission', winnerId TEXT DEFAULT '',
+    deadline INTEGER, createdBy TEXT DEFAULT '', createdAt TEXT DEFAULT ''
+  )`);
+    run(`CREATE TABLE IF NOT EXISTS meme_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    username TEXT DEFAULT '', avatar TEXT DEFAULT '',
+    gifUrl TEXT DEFAULT '', gifPreview TEXT DEFAULT '',
+    gifTitle TEXT DEFAULT '', FOREIGN KEY(roundId) REFERENCES meme_rounds(id)
+  )`);
+    run(`CREATE TABLE IF NOT EXISTS meme_votes (
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    targetId TEXT NOT NULL, PRIMARY KEY(roundId, userId)
+  )`);
+    run(`CREATE TABLE IF NOT EXISTS meme_points (
+    roundId INTEGER NOT NULL, userId TEXT NOT NULL,
+    points INTEGER DEFAULT 0, PRIMARY KEY(roundId, userId)
+  )`);
+    run('CREATE INDEX IF NOT EXISTS idx_ms_roundId ON meme_submissions(roundId)');
 }
 // --- Migration ---
 function migrateFromJson() {
@@ -598,5 +629,81 @@ function getLastRoundIds(count = 20) {
 }
 function getLastImpostorRoundIds(count = 10) {
     return rowsToArray(exec('SELECT * FROM impostor_rounds ORDER BY id DESC LIMIT ?', [count]));
+}
+// --- Meme Royale ---
+function getMemeState() {
+    const r = exec('SELECT * FROM meme_rounds ORDER BY id DESC LIMIT 1');
+    const row = firstRow(r);
+    if (!row)
+        return { round: null, submissions: [], votes: {} };
+    const round = { ...row, deadline: row.deadline || null };
+    const subs = rowsToArray(exec('SELECT userId,username,avatar,gifUrl,gifPreview,gifTitle FROM meme_submissions WHERE roundId = ?', [round.id]))
+        .map(s => ({ userId: s.userId, username: s.username, avatar: s.avatar, gifUrl: s.gifUrl, gifPreview: s.gifPreview, gifTitle: s.gifTitle }));
+    const voteRows = exec('SELECT targetId, COUNT(*) as cnt FROM meme_votes WHERE roundId = ? GROUP BY targetId', [round.id]);
+    const votes = {};
+    if (voteRows.length)
+        for (const v of voteRows[0].values)
+            votes[v[0]] = v[1];
+    return { round, submissions: subs, votes };
+}
+function createMemeRound(data) {
+    run('INSERT INTO meme_rounds(id,theme,phase,winnerId,deadline,createdBy,createdAt) VALUES(?,?,?,?,?,?,?)', [data.id, data.theme, 'submission', '', data.deadline, data.createdBy || '', data.createdAt || '']);
+    save();
+}
+function updateMemeRound(id, fields) {
+    const sets = [];
+    const vals = [];
+    for (const [k, v] of Object.entries(fields)) {
+        sets.push(`${k}=?`);
+        vals.push(v);
+    }
+    vals.push(id);
+    run(`UPDATE meme_rounds SET ${sets.join(',')} WHERE id=?`, vals);
+    save();
+}
+function upsertMemeSubmission(roundId, sub) {
+    const existing = exec('SELECT id FROM meme_submissions WHERE roundId=? AND userId=?', [roundId, sub.userId]);
+    if (existing.length && existing[0].values.length) {
+        run('UPDATE meme_submissions SET username=?,avatar=?,gifUrl=?,gifPreview=?,gifTitle=? WHERE roundId=? AND userId=?', [sub.username || '', sub.avatar || '', sub.gifUrl || '', sub.gifPreview || '', sub.gifTitle || '', roundId, sub.userId]);
+    }
+    else {
+        run('INSERT INTO meme_submissions(roundId,userId,username,avatar,gifUrl,gifPreview,gifTitle) VALUES(?,?,?,?,?,?,?)', [roundId, sub.userId, sub.username || '', sub.avatar || '', sub.gifUrl || '', sub.gifPreview || '', sub.gifTitle || '']);
+    }
+    save();
+}
+function memeSubmissionExists(roundId, userId) {
+    const r = exec('SELECT id FROM meme_submissions WHERE roundId=? AND userId=?', [roundId, userId]);
+    return !!(r.length && r[0].values.length);
+}
+function addMemeVote(roundId, userId, targetId) {
+    run('INSERT OR IGNORE INTO meme_votes(roundId,userId,targetId) VALUES(?,?,?)', [roundId, userId, targetId]);
+    save();
+}
+function hasMemeVoted(roundId, userId) {
+    const r = exec('SELECT targetId FROM meme_votes WHERE roundId=? AND userId=?', [roundId, userId]);
+    return !!(r.length && r[0].values.length);
+}
+function addMemePoints(roundId, userId, points) {
+    run('INSERT OR REPLACE INTO meme_points(roundId,userId,points) VALUES(?,?,?)', [roundId, userId, points]);
+    save();
+}
+function getMemeStats(userId) {
+    const r = exec(`
+    SELECT COUNT(*) as games, SUM(CASE WHEN mr.winnerId=? THEN 1 ELSE 0 END) as wins, COALESCE(SUM(mp.points),0) as pts
+    FROM meme_submissions ms JOIN meme_rounds mr ON ms.roundId = mr.id
+    LEFT JOIN meme_points mp ON ms.roundId = mp.roundId AND ms.userId = mp.userId
+    WHERE ms.userId = ? AND mr.phase = 'revealed'
+  `, [userId, userId]);
+    if (!r.length || !r[0].values.length)
+        return { memeGames: 0, memeWins: 0, memePoints: 0 };
+    return { memeGames: r[0].values[0][0], memeWins: r[0].values[0][1], memePoints: r[0].values[0][2] };
+}
+function getMemeVoteCounts(roundId) {
+    const r = exec('SELECT targetId, COUNT(*) as cnt FROM meme_votes WHERE roundId = ? GROUP BY targetId', [roundId]);
+    const counts = {};
+    if (r.length)
+        for (const v of r[0].values)
+            counts[v[0]] = v[1];
+    return counts;
 }
 //# sourceMappingURL=db.js.map

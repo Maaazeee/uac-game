@@ -184,7 +184,7 @@ function buildImpostorState(): any {
 }
 
 // Badge definitions
-const BADGE_THRESHOLDS: Array<{ key: string; check: (jp: db.UserStats, imp: db.ImpostorStats, streak: number) => boolean }> = [
+const BADGE_THRESHOLDS: Array<{ key: string; check: (jp: db.UserStats, imp: db.ImpostorStats, streak: number, meme?: any) => boolean }> = [
   { key: 'first_win', check: (jp) => jp.wins >= 1 },
   { key: 'sharp_shooter', check: (jp) => jp.bestRank === 1 },
   { key: 'undercover', check: (_, imp) => imp.impostorAssignments >= 1 },
@@ -194,6 +194,7 @@ const BADGE_THRESHOLDS: Array<{ key: string; check: (jp: db.UserStats, imp: db.I
   { key: 'master_impostor', check: (_, imp) => imp.impostorWins >= 3 },
   { key: 'top3_10', check: (jp) => jp.top3Count >= 10 },
   { key: 'hot_streak', check: (_, __, streak) => streak >= 3 },
+  { key: 'meme_winner', check: (_, __, ___, meme) => (meme?.memeWins || 0) >= 1 },
 ];
 
 const notifiedBadges = new Set<string>();
@@ -201,9 +202,10 @@ const notifiedBadges = new Set<string>();
 function getUserBadges(userId: string): string[] {
   const jpStats = db.getUserStats(userId);
   const impStats = db.getImpostorStats(userId);
+  const memeStats = db.getMemeStats(userId);
   let streak = 0;
   for (const g of jpStats.gameHistory.slice().reverse()) { if (g.rank === 1) streak++; else break; }
-  return BADGE_THRESHOLDS.filter(t => t.check(jpStats, impStats, streak)).map(t => t.key);
+  return BADGE_THRESHOLDS.filter(t => t.check(jpStats, impStats, streak, memeStats)).map(t => t.key);
 }
 
 function checkAndEmitBadges(userId: string): void {
@@ -271,12 +273,15 @@ app.get('/impostor', requireAuth, (req: Request, res: Response) => res.render('i
 app.get('/admin/impostor', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-impostor', { user: (req.session as any).user }));
 app.get('/admin/words', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-words', { user: (req.session as any).user }));
 app.get('/leaderboard', requireAuth, (req: Request, res: Response) => res.render('leaderboard', { user: (req.session as any).user }));
+app.get('/meme', requireAuth, (req: Request, res: Response) => res.render('meme', { user: (req.session as any).user }));
+app.get('/admin/meme', requireAuth, requireAdmin, (req: Request, res: Response) => res.render('admin-meme', { user: (req.session as any).user }));
 
 app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req.session as any).user.id;
     const jpStats = db.getUserStats(userId);
     const impStats = db.getImpostorStats(userId);
+    const memeStats = db.getMemeStats(userId);
     const impHistory = db.getImpostorGameHistory(userId);
     // Compute win streak (consecutive 1st places from most recent)
     let winStreak = 0;
@@ -294,7 +299,8 @@ app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunctio
     if (impStats.impostorWins >= 3) badges.push('master_impostor');
     if (jpStats.top3Count >= 10) badges.push('top3_10');
     if (winStreak >= 3) badges.push('hot_streak');
-    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, impHistory, badges });
+    if (memeStats.memeWins >= 1) badges.push('meme_winner');
+    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, ...memeStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, impHistory, badges });
   } catch (err) { next(err); }
 });
 
@@ -572,6 +578,110 @@ app.post('/api/admin/impostor/reveal', requireAuth, requireAdmin, (req: Request,
   res.json({ success: true, winner });
 });
 
+// --- Meme Royale API ---
+
+app.get('/api/meme/state', requireAuth, (req: Request, res: Response) => {
+  const state = db.getMemeState();
+  if (!state.round) return res.json({ round: null, submissions: [], votes: {} });
+  const userId = (req.session as any).user.id;
+  const sub = state.submissions.find(s => s.userId === userId);
+  res.json({
+    round: { id: state.round.id, theme: state.round.theme, phase: state.round.phase, deadline: state.round.deadline || null, winnerId: state.round.phase === 'revealed' ? state.round.winnerId : null },
+    submissions: state.round.phase === 'voting' || state.round.phase === 'revealed'
+      ? state.submissions.map(s => state.round.phase === 'revealed' ? s : { gifUrl: s.gifUrl, gifPreview: s.gifPreview, gifTitle: s.gifTitle, userId: s.userId })
+      : [],
+    votes: state.round.phase === 'revealed' ? state.votes : {},
+    iSubmitted: !!sub,
+    iVoted: db.hasMemeVoted(state.round.id, userId)
+  });
+});
+
+const GIPHY_API_KEY = process.env.GIPHY_API_KEY || 'KEPrZtPxrhx1q5xGMkoptzhoHDAtcgGs';
+
+app.get('/api/meme/search', requireAuth, async (req: Request, res: Response) => {
+  const q = String(req.query.q || '').trim();
+  if (!q) return res.json({ results: [] });
+  try {
+    const gres = await axios.get('https://api.giphy.com/v1/gifs/search', {
+      params: { api_key: GIPHY_API_KEY, q, limit: 20, rating: 'pg' }
+    });
+    const results = (gres.data.data || []).map((g: any) => ({
+      id: g.id, title: g.title,
+      url: g.images?.original?.url || '',
+      preview: g.images?.fixed_height?.url || g.images?.original?.url || ''
+    }));
+    res.json({ results });
+  } catch (err: any) {
+    logger.error({ err: err.message }, 'GIPHY search error');
+    res.json({ results: [] });
+  }
+});
+
+app.post('/api/meme/submit', requireAuth, (req: Request, res: Response) => {
+  const { gifUrl, gifPreview, gifTitle } = req.body;
+  if (!gifUrl) throw new ValidationError((res.locals as any).t('meme.gif_required'));
+  const state = db.getMemeState();
+  if (!state.round || state.round.phase !== 'submission') throw new ValidationError((res.locals as any).t('meme.no_round'));
+  const userId = (req.session as any).user.id;
+  if (db.memeSubmissionExists(state.round.id, userId)) throw new ValidationError((res.locals as any).t('meme.already_submitted'));
+  db.upsertMemeSubmission(state.round.id, {
+    userId, username: (req.session as any).user.globalName || (req.session as any).user.username,
+    avatar: (req.session as any).user.avatar, gifUrl: sanitize(gifUrl), gifPreview: sanitize(gifPreview || gifUrl), gifTitle: sanitize(gifTitle || '')
+  });
+  io.emit('memeSubmitted', { roundId: state.round.id, count: state.submissions.length + 1 });
+  res.json({ success: true });
+});
+
+app.post('/api/meme/vote', requireAuth, (req: Request, res: Response) => {
+  const { targetId } = req.body;
+  if (!targetId) throw new ValidationError((res.locals as any).t('meme.vote_required'));
+  const state = db.getMemeState();
+  if (!state.round || state.round.phase !== 'voting') throw new ValidationError((res.locals as any).t('meme.not_voting'));
+  const userId = (req.session as any).user.id;
+  if (db.hasMemeVoted(state.round.id, userId)) throw new ValidationError((res.locals as any).t('meme.already_voted'));
+  if (targetId === userId) throw new ValidationError((res.locals as any).t('meme.cannot_self_vote'));
+  if (!state.submissions.some(s => s.userId === targetId)) throw new ValidationError((res.locals as any).t('meme.invalid_target'));
+  db.addMemeVote(state.round.id, userId, targetId);
+  io.emit('memeVoteCast', { roundId: state.round.id });
+  res.json({ success: true });
+});
+
+// Admin meme
+app.post('/api/admin/meme/start', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  const { theme, duration } = req.body;
+  if (!theme || !theme.trim()) throw new ValidationError((res.locals as any).t('meme.theme_required'));
+  const deadline = duration ? Date.now() + duration * 60 * 1000 : null;
+  db.createMemeRound({ id: Date.now(), theme: sanitize(theme), deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString() });
+  io.emit('memeStart', { theme });
+  res.json({ success: true });
+});
+
+app.post('/api/admin/meme/voting', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  const state = db.getMemeState();
+  if (!state.round || state.round.phase !== 'submission') throw new ValidationError((res.locals as any).t('meme.no_round'));
+  if (state.submissions.length < 2) throw new ValidationError((res.locals as any).t('meme.need_min_submissions'));
+  db.updateMemeRound(state.round.id, { phase: 'voting' });
+  io.emit('memeVoting', { });
+  res.json({ success: true });
+});
+
+app.post('/api/admin/meme/reveal', requireAuth, requireAdmin, (req: Request, res: Response) => {
+  const state = db.getMemeState();
+  if (!state.round || state.round.phase !== 'voting') throw new ValidationError((res.locals as any).t('meme.no_round'));
+  const vc = db.getMemeVoteCounts(state.round.id);
+  const sorted = Object.entries(vc).sort((a, b) => b[1] - a[1]);
+  const winnerId = sorted.length > 0 ? sorted[0][0] : '';
+  const top3 = sorted.slice(0, 3);
+  top3.forEach(([uid], idx) => {
+    const pts = idx === 0 ? 3 : idx === 1 ? 2 : 1;
+    if (pts) db.addMemePoints(state.round.id, uid, pts);
+  });
+  db.updateMemeRound(state.round.id, { phase: 'revealed', winnerId });
+  io.emit('memeRevealed', { winnerId });
+  for (const sub of state.submissions) checkAndEmitBadges(sub.userId);
+  res.json({ success: true, winnerId, voteCounts: vc });
+});
+
 // --- Error handler (last) ---
 app.use(errorHandler);
 
@@ -614,6 +724,30 @@ cron.schedule('*/10 * * * * *', () => {
     io.emit('impostorStateUpdate', buildImpostorState());
     for (const pid of Object.keys(imp.players)) checkAndEmitBadges(pid);
     logger.info({ roundId: imp.id, winner }, 'Auto-revealed impostor round via cron');
+  }
+  // Meme auto-reveal: submission -> voting if deadline passed
+  const meme = db.getMemeState();
+  if (meme.round && meme.round.phase === 'submission' && meme.round.deadline && Date.now() >= meme.round.deadline) {
+    if (meme.submissions.length >= 2) {
+      db.updateMemeRound(meme.round.id, { phase: 'voting' });
+      io.emit('memeVoting', {});
+      logger.info({ roundId: meme.round.id }, 'Auto-transitioned meme to voting via cron');
+    }
+  }
+  // Meme auto-reveal if voting deadline passed
+  if (meme.round && meme.round.phase === 'voting' && meme.round.deadline && Date.now() >= meme.round.deadline) {
+    const vc = db.getMemeVoteCounts(meme.round.id);
+    const sorted = Object.entries(vc).sort((a, b) => b[1] - a[1]);
+    const winnerId = sorted.length > 0 ? sorted[0][0] : '';
+    const top3 = sorted.slice(0, 3);
+    top3.forEach(([uid], idx) => {
+      const pts = idx === 0 ? 3 : idx === 1 ? 2 : 1;
+      if (pts) db.addMemePoints(meme.round.id, uid, pts);
+    });
+    db.updateMemeRound(meme.round.id, { phase: 'revealed', winnerId });
+    io.emit('memeRevealed', { winnerId });
+    for (const sub of meme.submissions) checkAndEmitBadges(sub.userId);
+    logger.info({ roundId: meme.round.id, winnerId }, 'Auto-revealed meme round via cron');
   }
 });
 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= t('admin_meme.title') %></title>
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+::selection{background:#a855f766;color:#fff}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#0f0f1a}
+::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#3a3a5a}
+body{font-family:'Inter','Tajawal',sans-serif;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f0f1a 100%);color:#e0e0e0;min-height:100vh}
+.top-bar{background:rgba(15,15,26,.95);backdrop-filter:blur(12px);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #7c3aed}
+.top-left{display:flex;align-items:center;gap:24px}
+.logo{font-size:18px;font-weight:800;color:#fff}
+.logo span{color:#c084fc}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{color:#aaa;text-decoration:none;font-size:14px;font-weight:600}
+.nav-links a:hover{color:#c084fc}
+.lang-btn{background:none;border:1px solid #333;color:#888;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
+.lang-btn:hover{border-color:#7c3aed;color:#c084fc}
+.user-info{display:flex;align-items:center;gap:10px;font-size:13px}
+.user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #7c3aed}
+.user-info a{color:#f04747;text-decoration:none;font-size:12px}
+.container{max-width:500px;margin:0 auto;padding:32px 16px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:22px;font-weight:900;margin-bottom:4px}
+.sub{color:#888;font-size:14px;margin-bottom:24px}
+.card{background:#16213e;border:1px solid #1e2a4a;border-radius:12px;padding:20px;margin-bottom:12px}
+.card h2{font-size:16px;font-weight:700;margin-bottom:12px;color:#c084fc}
+input,select{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;width:100%;font-family:inherit;transition:.2s}
+input:focus,select:focus{border-color:#a855f7}
+input{margin-bottom:8px}
+.btn{background:#a855f7;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;width:100%;transition:.2s;font-family:inherit}
+.btn:hover{background:#9333ea}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-green{background:#43b581}
+.btn-green:hover{background:#369b6e}
+.btn-red{background:#f04747}
+.btn-red:hover{background:#d33a3a}
+.btn-sm{padding:6px 14px;width:auto}
+.status{text-align:center;padding:12px;border-radius:8px;margin-bottom:12px;font-size:14px;font-weight:600}
+.status-submission{background:#a855f722;border:1px solid #a855f7;color:#c084fc}
+.status-voting{background:#f59e0b22;border:1px solid #f59e0b;color:#fbbf24}
+.status-revealed{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
+.status-none{background:#2a2a4a22;border:1px solid #2a2a4a;color:#888}
+.actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a4a;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row .label{color:#888}
+.info-row .value{color:#c084fc;font-weight:600}
+footer{text-align:center;padding:24px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="top-left">
+    <div class="logo"><span>UAC</span> Admin Mème</div>
+    <div class="nav-links">
+      <a href="/admin"><%= t('admin_meme.back') %></a>
+    </div>
+  </div>
+  <div class="user-info">
+    <span><%= user.globalName %></span>
+    <a href="/logout"><%= t('nav.logout') %></a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>🎭 <%= t('admin_meme.heading') %></h1>
+  <p class="sub"><%= t('admin_meme.sub') %></p>
+
+  <div id="status" class="status status-none"><%= t('admin_meme.loading') %></div>
+
+  <div class="card">
+    <h2>➕ <%= t('admin_meme.start_title') %></h2>
+    <input type="text" id="theme-input" :placeholder="t('admin_meme.theme_placeholder')">
+    <select id="duration-select">
+      <option value="0"><%= t('admin_meme.no_timer') %></option>
+      <option value="2">2 min</option>
+      <option value="5">5 min</option>
+      <option value="10">10 min</option>
+      <option value="15">15 min</option>
+      <option value="30">30 min</option>
+    </select>
+    <button class="btn btn-green" id="start-btn" onclick="startRound()">🚀 <%= t('admin_meme.start_btn') %></button>
+  </div>
+
+  <div class="card" id="actions-card" style="display:none">
+    <h2>🎮 <%= t('admin_meme.manage_title') %></h2>
+    <div class="actions">
+      <button class="btn" id="voting-btn" onclick="startVoting()">🗳️ <%= t('admin_meme.voting_btn') %></button>
+      <button class="btn btn-red" id="reveal-btn" onclick="revealWinner()">👑 <%= t('admin_meme.reveal_btn') %></button>
+    </div>
+  </div>
+
+  <div class="card" id="info-card" style="display:none">
+    <h2>📊 <%= t('admin_meme.info_title') %></h2>
+    <div class="info-row"><span class="label"><%= t('admin_meme.theme') %></span><span class="value" id="info-theme">-</span></div>
+    <div class="info-row"><span class="label"><%= t('admin_meme.phase') %></span><span class="value" id="info-phase">-</span></div>
+    <div class="info-row"><span class="label"><%= t('admin_meme.participants') %></span><span class="value" id="info-count">0</span></div>
+  </div>
+</div>
+
+<footer><%= t('admin_meme.footer') %></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.min.js"></script>
+<script>
+var translations = <%- JSON.stringify(locale.admin_meme || locale) %>;
+</script>
+<script>
+var socket = io();
+
+function updateUI() {
+  fetch('/api/meme/state').then(r => r.json()).then(data => {
+    var statusEl = document.getElementById('status');
+    var actionsCard = document.getElementById('actions-card');
+    var infoCard = document.getElementById('info-card');
+    var votingBtn = document.getElementById('voting-btn');
+    var revealBtn = document.getElementById('reveal-btn');
+    var startBtn = document.getElementById('start-btn');
+
+    if (!data.round) {
+      statusEl.className = 'status status-none';
+      statusEl.textContent = translations.no_round || 'Aucune partie en cours';
+      actionsCard.style.display = 'none';
+      infoCard.style.display = 'none';
+      startBtn.disabled = false;
+      return;
+    }
+
+    var r = data.round;
+    infoCard.style.display = 'block';
+    document.getElementById('info-theme').textContent = r.theme;
+    document.getElementById('info-phase').textContent = r.phase;
+    document.getElementById('info-count').textContent = (data.submissions || []).length;
+
+    statusEl.className = 'status status-' + r.phase;
+    var labels = { submission: translations.phase_submission || 'Soumission', voting: translations.phase_voting || 'Vote', revealed: translations.phase_revealed || 'Terminé' };
+    statusEl.textContent = labels[r.phase] || r.phase;
+
+    if (r.phase === 'revealed') {
+      actionsCard.style.display = 'none';
+      startBtn.disabled = false;
+    } else {
+      actionsCard.style.display = 'block';
+      startBtn.disabled = true;
+      votingBtn.style.display = r.phase === 'submission' ? 'block' : 'none';
+      revealBtn.style.display = r.phase === 'voting' ? 'block' : 'none';
+    }
+  }).catch(() => {});
+}
+
+function startRound() {
+  var theme = document.getElementById('theme-input').value.trim();
+  if (!theme) { alert(translations.theme_required || 'Thème requis'); return; }
+  var duration = parseInt(document.getElementById('duration-select').value) || 0;
+  fetch('/api/admin/meme/start', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ theme, duration })
+  }).then(r => r.json()).then(d => {
+    if (d.error) { alert(d.error); return; }
+    document.getElementById('theme-input').value = '';
+    updateUI();
+  });
+}
+
+function startVoting() {
+  if (!confirm(translations.confirm_voting || 'Ouvrir le vote ?')) return;
+  fetch('/api/admin/meme/voting', { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.error) { alert(d.error); return; }
+    updateUI();
+  });
+}
+
+function revealWinner() {
+  if (!confirm(translations.confirm_reveal || 'Révéler le gagnant ?')) return;
+  var btn = document.getElementById('reveal-btn');
+  btn.disabled = true; btn.textContent = '...';
+  fetch('/api/admin/meme/reveal', { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.error) { alert(d.error); return; }
+    updateUI();
+    btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler';
+  }).catch(() => { btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler'; });
+}
+
+socket.on('memeStart', function() { updateUI(); });
+socket.on('memeSubmitted', function() { updateUI(); });
+socket.on('memeVoting', function() { updateUI(); });
+socket.on('memeRevealed', function() { updateUI(); });
+
+setInterval(updateUI, 5000);
+updateUI();
+</script>
+</body>
+</html>
