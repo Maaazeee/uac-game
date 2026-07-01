@@ -6,7 +6,10 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const crypto = require('crypto');
 const { Server } = require('socket.io');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { i18nMiddleware } = require('./i18n');
 
 const app = express();
@@ -23,7 +26,9 @@ function loadDB() {
 }
 
 function saveDB(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+  const tmp = DB_PATH + '.tmp.' + Date.now();
+  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
+  fs.renameSync(tmp, DB_PATH);
 }
 
 // Init DB
@@ -37,6 +42,10 @@ const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/callb
 const GUILD_ID = process.env.GUILD_ID || '';
 
 // --- Middleware ---
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -48,9 +57,40 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'uac-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
 }));
 app.use(i18nMiddleware);
+
+// --- Rate limiting ---
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' }
+});
+app.use('/api/', apiLimiter);
+
+// --- CSRF origin check ---
+const ALLOWED_ORIGINS = [
+  'https://uac-game.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:' + PORT
+];
+function csrfCheck(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.headers.origin || '';
+  const referer = req.headers.referer || '';
+  const allowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o) || referer.startsWith(o));
+  if (!allowed) return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+app.use(csrfCheck);
 
 // --- Auth middleware ---
 function requireAuth(req, res, next) {
@@ -61,6 +101,12 @@ function requireAuth(req, res, next) {
 function requireAdmin(req, res, next) {
   if (req.session.user && req.session.user.isAdmin) return next();
   res.status(403).send(res.locals.t('errors.forbidden'));
+}
+
+// --- Input sanitization ---
+function sanitize(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/[<>]/g, '').trim();
 }
 
 // --- Routes ---
@@ -355,7 +401,7 @@ app.post('/api/bet', requireAuth, (req, res) => {
     username: req.session.user.globalName || req.session.user.username,
     avatar: req.session.user.avatar,
     value: num,
-    reason: reason || null,
+    reason: reason ? sanitize(reason) : null,
     time: Date.now()
   });
 
@@ -382,10 +428,10 @@ app.post('/api/admin/question', requireAuth, requireAdmin, (req, res) => {
 
   const round = {
     id: Date.now(),
-    question,
+    question: sanitize(question),
     answer: parseFloat(answer),
-    reason: reason || null,
-    contextImg: contextImg || null,
+    reason: reason ? sanitize(reason) : null,
+    contextImg: contextImg ? sanitize(contextImg) : null,
     revealed,
     deadline,
     bets: [],
@@ -427,7 +473,9 @@ function loadQuestions() {
 }
 
 function saveQuestions(questions) {
-  fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(questions, null, 2));
+  const tmp = QUESTIONS_PATH + '.tmp.' + Date.now();
+  fs.writeFileSync(tmp, JSON.stringify(questions, null, 2));
+  fs.renameSync(tmp, QUESTIONS_PATH);
 }
 
 // Get all questions
@@ -647,7 +695,7 @@ app.post('/api/impostor/submit', requireAuth, (req, res) => {
   if (!player) return res.status(400).json({ error: res.locals.t('impostor.join_first') });
   if (player.word) return res.status(400).json({ error: res.locals.t('impostor.already_submitted') });
 
-  player.word = word.trim();
+  player.word = sanitize(word);
   saveImpostorState(db, round);
   io.emit('impostorWordSubmitted', { id: round.id, playerId: req.session.user.id });
   res.json({ success: true });
@@ -696,8 +744,8 @@ app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req, res) => {
 
   const round = {
     id: Date.now(),
-    realWord: realWord.trim(),
-    fakeWord: fakeWord.trim(),
+    realWord: sanitize(realWord),
+    fakeWord: sanitize(fakeWord),
     impostorId: null,
     phase: 'submission',
     players: {},
@@ -726,8 +774,8 @@ app.post('/api/admin/impostor/start-random', requireAuth, requireAdmin, (req, re
   const db = loadDB();
   const round = {
     id: Date.now(),
-    realWord: realWord.trim(),
-    fakeWord: fakeWord.trim(),
+    realWord: sanitize(realWord),
+    fakeWord: sanitize(fakeWord),
     impostorId: null,
     phase: 'submission',
     players: {},
