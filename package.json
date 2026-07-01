@@ -1,7 +1,7 @@
 {
   "name": "uac-prix-juste",
   "version": "1.0.0",
-  "description": "UAC - Le Prix est Juste avec authentification Discord",
+  "description": "UAC - Le Juste Prix avec authentification Discord",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

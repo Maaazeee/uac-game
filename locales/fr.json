@@ -21,7 +21,7 @@
     "title": "Mes Jeux - UAC",
     "heading": "Mes Jeux",
     "welcome": "Bienvenue {{name}} ! Choisis un jeu.",
-    "game_title": "Le Prix est Juste",
+    "game_title": "Le Juste Prix",
     "game_desc": "Devine le nombre le plus proche de la réponse et gagne !",
     "impostor_title": "Le Mot Imposteur",
     "impostor_desc": "Trouve l'intrus parmi les joueurs avant qu'il ne s'échappe !",
@@ -32,7 +32,7 @@
     "footer": "UAC — Underground Algerian Community"
   },
   "game": {
-    "title": "UAC - Le Prix est Juste",
+    "title": "UAC - Le Juste Prix",
     "loading": "Chargement...",
     "waiting_title": "En attente d'une question",
     "waiting_desc": "L'admin n'a pas encore posé de question. Reviens plus tard !",
@@ -61,7 +61,7 @@
   "leaderboard": {
     "title": "Classement - UAC",
     "heading": "Classement",
-    "sub": "Les meilleurs joueurs du Prix est Juste",
+    "sub": "Les meilleurs joueurs du Juste Prix",
     "rank": "Rang",
     "player": "Joueur",
     "points": "Points",
@@ -70,7 +70,7 @@
     "empty": "Aucun classement pour le moment. Les résultats apparaîtront après les premières manches."
   },
   "admin": {
-    "title": "Admin - UAC Prix est Juste",
+    "title": "Admin - UAC Juste Prix",
     "heading": "Panneau Admin",
     "sub": "Configure les questions et gère le jeu",
     "new_question": "Nouvelle question",
