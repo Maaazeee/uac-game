@@ -87,9 +87,10 @@ app.set('views', path_1.default.join(PROJECT_ROOT, 'views'));
 app.use((0, cookie_parser_1.default)());
 app.use((0, express_session_1.default)({
     secret: process.env.SESSION_SECRET || 'uac-secret-change-me',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 }
+    resave: true,
+    saveUninitialized: true,
+    rolling: true,
+    cookie: { secure: false, httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 }
 }));
 app.use(i18n_1.i18nMiddleware);
 // Rate limiting
@@ -171,7 +172,7 @@ app.get('/callback', async (req, res) => {
         });
         req.session.user = { id: u.id, username: u.username, globalName: u.globalName, avatar: u.avatar, isAdmin: u.isAdmin };
         logger_1.default.info({ userId: u.id, username: u.username }, 'User logged in');
-        res.redirect('/games');
+        req.session.save(() => res.redirect('/games'));
     }
     catch (err) {
         logger_1.default.error({ err: err.response?.data || err.message }, 'OAuth callback error');

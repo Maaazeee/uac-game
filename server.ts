@@ -16,6 +16,12 @@ import logger from './logger';
 import { AppError, ValidationError } from './errors';
 import * as db from './db';
 
+declare module 'express-session' {
+  interface SessionData {
+    user?: { id: string; username: string; globalName: string; avatar: string; isAdmin: boolean };
+  }
+}
+
 const PROJECT_ROOT = fs.existsSync(path.join(__dirname, 'views')) ? __dirname : path.join(__dirname, '..');
 
 const app = express();
@@ -55,9 +61,10 @@ app.set('views', path.join(PROJECT_ROOT, 'views'));
 app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'uac-secret-change-me',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 }
+  resave: true,
+  saveUninitialized: true,
+  rolling: true,
+  cookie: { secure: false, httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 }
 }));
 app.use(i18nMiddleware);
 
@@ -143,9 +150,9 @@ app.get('/callback', async (req: Request, res: Response) => {
       isAdmin: ADMINS.includes(discordUser.username.toLowerCase())
     });
 
-    (req.session as any).user = { id: u!.id, username: u!.username, globalName: u!.globalName, avatar: u!.avatar, isAdmin: u!.isAdmin };
+    req.session.user = { id: u!.id, username: u!.username, globalName: u!.globalName, avatar: u!.avatar, isAdmin: u!.isAdmin };
     logger.info({ userId: u!.id, username: u!.username }, 'User logged in');
-    res.redirect('/games');
+    req.session.save(() => res.redirect('/games'));
   } catch (err: any) {
     logger.error({ err: err.response?.data || err.message }, 'OAuth callback error');
     res.send((res.locals as any).t('errors.auth'));
