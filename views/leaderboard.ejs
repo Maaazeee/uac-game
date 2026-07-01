@@ -91,6 +91,9 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
           <span><%= t('leaderboard.points') %></span>
           <div style="color:#888;font-size:11px;margin-top:2px">
             {{ e.wins }} <%= t('leaderboard.wins') %> · {{ e.bets }} <%= t('leaderboard.bets') %>
+            <div v-if="e.impostorGames > 0" style="color:#888;font-size:11px;margin-top:1px">
+              🕵️ {{ e.impostorGames }} · 🏆 {{ e.impostorWins }}
+            </div>
           </div>
         </div>
       </div>

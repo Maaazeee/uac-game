@@ -188,8 +188,8 @@ app.get('/profile', requireAuth, (req, res) => {
   const rounds = db.rounds || [];
   const impostorRounds = db.impostorRounds || [];
 
-  // Le Prix est Juste stats
-  let totalBets = 0, wins = 0, points = 0, bestRank = null;
+  // Le Juste Prix stats
+  let totalBets = 0, wins = 0, points = 0, bestRank = null, top3Count = 0;
   const gameHistory = [];
   for (const r of rounds) {
     if (!r.revealed || !r.bets) continue;
@@ -208,25 +208,39 @@ app.get('/profile', requireAuth, (req, res) => {
       if (idx === 0) { wins++; points += 3; }
       else if (idx === 1) points += 2;
       else if (idx === 2) points += 1;
+      if (idx < 3) top3Count++;
       if (bestRank === null || idx + 1 < bestRank) bestRank = idx + 1;
     }
   }
 
   // Impostor stats
-  let impostorGames = 0, impostorWins = 0, impostorAssignments = 0;
+  let impostorGames = 0, impostorWins = 0, impostorAssignments = 0, impostorPoints = 0;
   for (const ir of impostorRounds) {
     if (ir.phase !== 'revealed' || !ir.players) continue;
     const player = ir.players[userId];
     if (!player) continue;
     impostorGames++;
     if (player.isImpostor) impostorAssignments++;
+    if (ir.points && ir.points[userId]) impostorPoints += ir.points[userId];
     if (ir.winner === 'impostor' && player.isImpostor) impostorWins++;
     if (ir.winner === 'players' && !player.isImpostor) impostorWins++;
   }
 
+  // Badges
+  const badges = [];
+  if (wins >= 1) badges.push('first_win');
+  if (bestRank === 1) badges.push('sharp_shooter');
+  if (impostorAssignments >= 1) badges.push('undercover');
+  if (wins >= 5) badges.push('champion');
+  if (wins >= 10) badges.push('legend');
+  if (totalBets >= 20) badges.push('gambler');
+  if (impostorWins >= 3) badges.push('master_impostor');
+  if (top3Count >= 10) badges.push('top3_10');
+
   res.render('profile', {
     user: req.session.user,
-    stats: { totalBets, wins, points, bestRank, gameHistory, impostorGames, impostorWins, impostorAssignments }
+    stats: { totalBets, wins, points, bestRank, gameHistory, impostorGames, impostorWins, impostorAssignments, impostorPoints, top3Count },
+    badges
   });
 });
 
@@ -242,7 +256,7 @@ function autoReveal(round) {
 }
 
 // Leaderboard calculation
-function computeLeaderboard(rounds) {
+function computeLeaderboard(rounds, impostorRounds) {
   const scores = {};
   for (const r of rounds) {
     if (!r.revealed || !r.bets || r.bets.length === 0) continue;
@@ -256,7 +270,7 @@ function computeLeaderboard(rounds) {
     });
     sorted.forEach((b, i) => {
       if (!scores[b.userId]) {
-        scores[b.userId] = { userId: b.userId, username: b.username, avatar: b.avatar, points: 0, wins: 0, bets: 0 };
+        scores[b.userId] = { userId: b.userId, username: b.username, avatar: b.avatar, points: 0, wins: 0, bets: 0, impostorGames: 0, impostorWins: 0 };
       }
       scores[b.userId].bets++;
       if (i === 0) { scores[b.userId].points += 3; scores[b.userId].wins++; }
@@ -264,7 +278,21 @@ function computeLeaderboard(rounds) {
       else if (i === 2) scores[b.userId].points += 1;
     });
   }
-  return Object.values(scores).sort((a, b) => b.points - a.points || b.wins - a.wins);
+  if (impostorRounds) {
+    for (const ir of impostorRounds) {
+      if (ir.phase !== 'revealed' || !ir.points) continue;
+      for (const [pid, pts] of Object.entries(ir.points)) {
+        if (!scores[pid]) {
+          const p = ir.players?.[pid];
+          scores[pid] = { userId: pid, username: p?.username || '?', avatar: p?.avatar || '', points: 0, wins: 0, bets: 0, impostorGames: 0, impostorWins: 0 };
+        }
+        scores[pid].points += pts;
+        scores[pid].impostorGames++;
+        if (pts >= 3) scores[pid].impostorWins++;
+      }
+    }
+  }
+  return Object.values(scores).sort((a, b) => b.points - a.points || b.wins - a.wins || b.bets - a.bets);
 }
 
 // Get current game state
@@ -460,7 +488,7 @@ app.get('/leaderboard', requireAuth, (req, res) => {
 
 app.get('/api/leaderboard', (req, res) => {
   const db = loadDB();
-  res.json(computeLeaderboard(db.rounds));
+  res.json(computeLeaderboard(db.rounds, db.impostorRounds));
 });
 
 // --- Impostor Game ---
@@ -705,6 +733,15 @@ app.post('/api/admin/impostor/reveal', requireAuth, requireAdmin, (req, res) => 
   round.winner = majority ? 'players' : 'impostor';
   round.votes = votes;
   round.phase = 'revealed';
+
+  // Award points
+  const points = {};
+  for (const pid of Object.keys(round.players)) {
+    if (round.winner === 'impostor' && pid === impostorId) points[pid] = 3;
+    else if (round.winner === 'players' && pid !== impostorId) points[pid] = 1;
+  }
+  round.points = points;
+
   saveImpostorState(db, round);
   res.json({ success: true, winner: round.winner });
 });

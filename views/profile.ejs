@@ -46,6 +46,10 @@ h1{font-size:24px;font-weight:900;margin-bottom:4px}
 .empty{text-align:center;color:#888;padding:24px;font-size:14px}
 .back-link{display:inline-flex;align-items:center;gap:6px;color:#c084fc;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:16px;transition:.2s}
 .back-link:hover{color:#a855f7}
+.badges-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;justify-content:center}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#16213e;border:1px solid #2a2a4a;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;transition:.2s}
+.badge:hover{border-color:#a855f7;background:#1e2a4a}
+.badge .icon{font-size:16px}
 footer{text-align:center;padding:24px;color:#555;font-size:13px}
 [dir="rtl"] .game-card .q{text-align:right}
 [dir="rtl"] .game-card .meta{text-align:left}
@@ -101,6 +105,10 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <div class="label"><%= t('profile.best_rank') %></div>
     </div>
     <div class="stat-card">
+      <div class="num"><%= stats.impostorPoints %></div>
+      <div class="label"><%= t('profile.impostor_points') %></div>
+    </div>
+    <div class="stat-card">
       <div class="num"><%= stats.impostorGames %></div>
       <div class="label"><%= t('profile.impostor_games') %></div>
     </div>
@@ -109,6 +117,18 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <div class="label"><%= t('profile.impostor_wins') %></div>
     </div>
   </div>
+
+  <% if (badges.length > 0) { %>
+    <h2 class="section-title"><%= t('profile.badges') %></h2>
+    <div class="badges-grid">
+      <% badges.forEach(function(b) { %>
+        <div class="badge" title="<%= t('badges.' + b + '_desc') %>">
+          <span class="icon"><%= t('badges.' + b + '_icon') %></span>
+          <%= t('badges.' + b) %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
 
   <h2 class="section-title"><%= t('profile.history') %></h2>
   <% if (stats.gameHistory.length === 0) { %>

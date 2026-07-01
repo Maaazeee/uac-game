@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title><%= t('impostor.title') %></title>
+<script src="/js/sfx.js"></script>
+<script src="/js/confetti.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800;900&display=swap');
@@ -230,7 +232,8 @@ var app = new Vue({
     selectedVote: null,
     translations: window.translations,
     userId: userId,
-    playerNames: {}
+    playerNames: {},
+    wasRevealed: false
   },
   computed: {
     phaseLabel() {
@@ -248,6 +251,13 @@ var app = new Vue({
         this.submitted = data.iSubmitted;
         this.voted = data.iVoted;
         this.loading = false;
+        // Detect reveal transition
+        if (data.round && data.round.phase === 'revealed' && !this.wasRevealed) {
+          this.wasRevealed = true;
+          if (typeof playImpostorReveal === 'function') playImpostorReveal();
+          if (typeof fireConfetti === 'function') fireConfetti(4000);
+        }
+        if (data.round && data.round.phase !== 'revealed') this.wasRevealed = false;
         if (data.round) {
           this.playerNames = {};
           // Build player name map from submissions
