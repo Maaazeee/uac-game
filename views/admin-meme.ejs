@@ -79,7 +79,7 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
 
   <div class="card">
     <h2>➕ <%= t('admin_meme.start_title') %></h2>
-    <input type="text" id="theme-input" :placeholder="t('admin_meme.theme_placeholder')">
+    <input type="text" id="theme-input" placeholder="<%= t('admin_meme.theme_placeholder') %>">
     <select id="duration-select">
       <option value="0"><%= t('admin_meme.no_timer') %></option>
       <option value="2">2 min</option>
@@ -96,6 +96,7 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
     <div class="actions">
       <button class="btn" id="voting-btn" onclick="startVoting()">🗳️ <%= t('admin_meme.voting_btn') %></button>
       <button class="btn btn-red" id="reveal-btn" onclick="revealWinner()">👑 <%= t('admin_meme.reveal_btn') %></button>
+      <button class="btn btn-red" id="cancel-btn" style="background:#555" onclick="cancelRound()">🗑️ <%= t('admin_meme.cancel_btn') %></button>
     </div>
   </div>
 
@@ -125,7 +126,7 @@ function updateUI() {
     var revealBtn = document.getElementById('reveal-btn');
     var startBtn = document.getElementById('start-btn');
 
-    if (!data.round) {
+    if (!data.round || r.phase === 'cancelled') {
       statusEl.className = 'status status-none';
       statusEl.textContent = translations.no_round || 'Aucune partie en cours';
       actionsCard.style.display = 'none';
@@ -183,16 +184,24 @@ function revealWinner() {
   var btn = document.getElementById('reveal-btn');
   btn.disabled = true; btn.textContent = '...';
   fetch('/api/admin/meme/reveal', { method: 'POST' }).then(r => r.json()).then(d => {
-    if (d.error) { alert(d.error); return; }
+    if (d.error) { alert(d.error); btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler'; return; }
     updateUI();
     btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler';
-  }).catch(() => { btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler'; });
+  }).catch(function(e) { btn.disabled = false; btn.textContent = translations.reveal_btn || 'Révéler'; alert('Erreur: ' + e.message); });
+}
+
+function cancelRound() {
+  if (!confirm(translations.confirm_cancel || 'Annuler la manche en cours ?')) return;
+  fetch('/api/admin/meme/cancel', { method: 'POST' }).then(r => r.json()).then(function() {
+    updateUI();
+  }).catch(function() {});
 }
 
 socket.on('memeStart', function() { updateUI(); });
 socket.on('memeSubmitted', function() { updateUI(); });
 socket.on('memeVoting', function() { updateUI(); });
 socket.on('memeRevealed', function() { updateUI(); });
+socket.on('memeCancelled', function() { updateUI(); });
 
 setInterval(updateUI, 5000);
 updateUI();

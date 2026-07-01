@@ -665,6 +665,15 @@ app.post('/api/admin/meme/voting', requireAuth, requireAdmin, (req: Request, res
   res.json({ success: true });
 });
 
+app.post('/api/admin/meme/cancel', requireAuth, requireAdmin, (_req: Request, res: Response) => {
+  const state = db.getMemeState();
+  if (state.round) {
+    db.updateMemeRound(state.round.id, { phase: 'cancelled' });
+    io.emit('memeCancelled', { });
+  }
+  res.json({ success: true });
+});
+
 app.post('/api/admin/meme/reveal', requireAuth, requireAdmin, (req: Request, res: Response) => {
   const state = db.getMemeState();
   if (!state.round || state.round.phase !== 'voting') throw new ValidationError((res.locals as any).t('meme.no_round'));

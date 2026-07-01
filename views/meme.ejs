@@ -387,6 +387,7 @@ var app = new Vue({
     socket.on('memeSubmitted', function() { self.fetchState(); });
     socket.on('memeVoting', function() { self.fetchState(); showToast(translations.meme_voting_started || 'Vote ouvert !', 'warning'); if (typeof playImpostorVoting === 'function') playImpostorVoting(); });
     socket.on('memeRevealed', function() { self.fetchState(); });
+    socket.on('memeCancelled', function() { self.fetchState(); showToast(translations.meme_cancelled || 'Manche annulée', 'warning'); });
     socket.on('badgeUnlocked', function(data) {
       if (data.badges && data.badges.length) {
         showToast('🏆 ' + (translations.badge_unlocked || 'Badge débloqué') + ': ' + data.badges.join(', '), 'success');
