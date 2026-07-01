@@ -125,13 +125,96 @@ function sanitize(str: string): string {
   return str.replace(/[<>]/g, '').trim();
 }
 
-// --- Socket.io ---
+// --- Socket.io user mapping for private events ---
+const userSockets = new Map<string, Set<string>>();
+
 io.on('connection', (socket) => {
   logger.debug({ socketId: socket.id }, 'Socket connected');
+  socket.on('register', (userId: string) => {
+    if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+    userSockets.get(userId)!.add(socket.id);
+  });
   socket.on('disconnect', () => {
+    for (const [uid, sockets] of userSockets) {
+      sockets.delete(socket.id);
+      if (sockets.size === 0) userSockets.delete(uid);
+    }
     logger.debug({ socketId: socket.id }, 'Socket disconnected');
   });
 });
+
+function emitToUser(userId: string, event: string, data: any) {
+  const sockets = userSockets.get(userId);
+  if (sockets) for (const sid of sockets) io.to(sid).emit(event, data);
+}
+
+// Build full game state (same as /api/state response minus user-specific fields)
+function buildGameState(): any {
+  const round = db.getCurrentRound();
+  if (!round) return { round: null, bets: [] };
+  if (!round.revealed && round.deadline && Date.now() >= round.deadline) {
+    db.updateRound(round.id, { revealed: 1 });
+    round.revealed = true;
+  }
+  const bets = (round.bets || []).map(b => round.revealed ? b : { value: b.value, reason: b.reason || null, anonymous: true });
+  return {
+    round: {
+      id: round.id, question: round.question, contextImg: round.contextImg || null,
+      answer: round.revealed ? round.answer : null, reason: round.revealed ? round.reason : null,
+      revealed: round.revealed, deadline: round.deadline || null, createdAt: round.createdAt
+    }, bets
+  };
+}
+
+function buildImpostorState(): any {
+  const round = db.getImpostorState();
+  if (!round) return { round: null };
+  const playerList = Object.values(round.players).map(p => ({ userId: p.userId, username: p.username }));
+  return {
+    round: {
+      id: round.id, phase: round.phase, deadline: round.deadline || null,
+      players: playerList, playerCount: Object.keys(round.players).length,
+      submissions: round.phase === 'voting' || round.phase === 'revealed'
+        ? Object.values(round.players).map(p => ({ word: p.word, userId: p.userId })) : null,
+      impostorId: round.phase === 'revealed' ? round.impostorId : null,
+      winner: round.phase === 'revealed' ? round.winner : null,
+      votes: round.phase === 'revealed' ? round.votes : null, createdAt: round.createdAt
+    }
+  };
+}
+
+// Badge definitions
+const BADGE_THRESHOLDS: Array<{ key: string; check: (jp: db.UserStats, imp: db.ImpostorStats, streak: number) => boolean }> = [
+  { key: 'first_win', check: (jp) => jp.wins >= 1 },
+  { key: 'sharp_shooter', check: (jp) => jp.bestRank === 1 },
+  { key: 'undercover', check: (_, imp) => imp.impostorAssignments >= 1 },
+  { key: 'champion', check: (jp) => jp.wins >= 5 },
+  { key: 'legend', check: (jp) => jp.wins >= 10 },
+  { key: 'gambler', check: (jp) => jp.totalBets >= 20 },
+  { key: 'master_impostor', check: (_, imp) => imp.impostorWins >= 3 },
+  { key: 'top3_10', check: (jp) => jp.top3Count >= 10 },
+  { key: 'hot_streak', check: (_, __, streak) => streak >= 3 },
+];
+
+const notifiedBadges = new Set<string>();
+
+function getUserBadges(userId: string): string[] {
+  const jpStats = db.getUserStats(userId);
+  const impStats = db.getImpostorStats(userId);
+  let streak = 0;
+  for (const g of jpStats.gameHistory.slice().reverse()) { if (g.rank === 1) streak++; else break; }
+  return BADGE_THRESHOLDS.filter(t => t.check(jpStats, impStats, streak)).map(t => t.key);
+}
+
+function checkAndEmitBadges(userId: string): void {
+  const badges = getUserBadges(userId);
+  const unlocked: string[] = [];
+  for (const b of badges) {
+    const key = `${userId}_${b}`;
+    if (!notifiedBadges.has(key)) { notifiedBadges.add(key); unlocked.push(b); }
+  }
+  if (unlocked.length > 0) emitToUser(userId, 'badgeUnlocked', { badges: unlocked });
+}
 
 // Emit socket count periodically
 setInterval(() => {
@@ -194,6 +277,7 @@ app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunctio
     const userId = (req.session as any).user.id;
     const jpStats = db.getUserStats(userId);
     const impStats = db.getImpostorStats(userId);
+    const impHistory = db.getImpostorGameHistory(userId);
     // Compute win streak (consecutive 1st places from most recent)
     let winStreak = 0;
     for (const g of jpStats.gameHistory.slice().reverse()) {
@@ -210,32 +294,16 @@ app.get('/profile', requireAuth, (req: Request, res: Response, next: NextFunctio
     if (impStats.impostorWins >= 3) badges.push('master_impostor');
     if (jpStats.top3Count >= 10) badges.push('top3_10');
     if (winStreak >= 3) badges.push('hot_streak');
-    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, badges });
+    res.render('profile', { user: (req.session as any).user, stats: { ...jpStats, ...impStats, bestRank: jpStats.bestRank, top3Count: jpStats.top3Count, winStreak }, impHistory, badges });
   } catch (err) { next(err); }
 });
 
 // --- API ---
 
 app.get('/api/state', (req: Request, res: Response) => {
-  const round = db.getCurrentRound();
-  if (!round) return res.json({ round: null, bets: [] });
-
-  if (!round.revealed && round.deadline && Date.now() >= round.deadline) {
-    db.updateRound(round.id, { revealed: 1 });
-    round.revealed = true;
-    io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
-  }
-
-  const bets = (round.bets || []).map(b => round.revealed ? b : { value: b.value, reason: b.reason || null, anonymous: true });
-  const userAlreadyBet = (req.session as any).user && (round.bets || []).some(b => b.userId === (req.session as any).user.id);
-
-  res.json({
-    round: {
-      id: round.id, question: round.question, contextImg: round.contextImg || null,
-      answer: round.revealed ? round.answer : null, reason: round.revealed ? round.reason : null,
-      revealed: round.revealed, deadline: round.deadline || null, createdAt: round.createdAt
-    }, bets, userAlreadyBet
-  });
+  const state = buildGameState();
+  const userAlreadyBet = (req.session as any).user && state.bets.length > 0 && state.bets.some((b: any) => !b.anonymous && b.userId === (req.session as any).user.id);
+  res.json({ ...state, userAlreadyBet });
 });
 
 app.post('/api/bet', requireAuth, (req: Request, res: Response) => {
@@ -251,6 +319,7 @@ app.post('/api/bet', requireAuth, (req: Request, res: Response) => {
 
   db.addBet(round.id, { userId: (req.session as any).user.id, username: (req.session as any).user.globalName || (req.session as any).user.username, avatar: (req.session as any).user.avatar, value: num, reason: reason ? sanitize(reason) : null, time: Date.now() });
   io.emit('betUpdate', { roundId: round.id, count: round.bets.length + 1 });
+  io.emit('stateUpdate', buildGameState());
   res.json({ success: true, count: round.bets.length + 1 });
 });
 
@@ -270,6 +339,7 @@ app.post('/api/admin/question', requireAuth, requireAdmin, (req: Request, res: R
     revealed, deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
   });
   io.emit('newRound', { id: round!.id, question: round!.question, deadline: round!.deadline, revealed: round!.revealed });
+  io.emit('stateUpdate', buildGameState());
   res.json({ success: true, round: { id: round!.id, question } });
 });
 
@@ -278,6 +348,9 @@ app.post('/api/admin/reveal', requireAuth, requireAdmin, (req: Request, res: Res
   if (!round) throw new ValidationError((res.locals as any).t('errors.no_round_found'));
   db.updateRound(round.id, { revealed: 1 });
   io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
+  io.emit('stateUpdate', buildGameState());
+  // Check badges for all participants
+  for (const b of (round.bets || [])) checkAndEmitBadges(b.userId);
   res.json({ success: true });
 });
 
@@ -353,6 +426,7 @@ app.post('/api/impostor/join', requireAuth, (req: Request, res: Response) => {
     });
   }
   io.emit('impostorPlayerJoined', { count: Object.keys(db.getImpostorState()!.players).length });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true });
 });
 
@@ -366,6 +440,7 @@ app.post('/api/impostor/submit', requireAuth, (req: Request, res: Response) => {
   if (player.word) throw new ValidationError((res.locals as any).t('impostor.already_submitted'));
   db.upsertImpostorPlayer(round.id, { ...player, word: sanitize(word) });
   io.emit('impostorWordSubmitted', { id: round.id, playerId: (req.session as any).user.id });
+  io.emit('impostorStateUpdate', buildImpostorState());
 
   // Auto-transition to voting if all players have submitted
   const updated = db.getImpostorState();
@@ -374,6 +449,7 @@ app.post('/api/impostor/submit', requireAuth, (req: Request, res: Response) => {
     if (allSubmitted && Object.keys(updated.players).length >= 2) {
       db.updateImpostorRound(round.id, { phase: 'voting' });
       io.emit('impostorVoting', { id: round.id });
+      io.emit('impostorStateUpdate', buildImpostorState());
     }
   }
 
@@ -392,6 +468,7 @@ app.post('/api/impostor/vote', requireAuth, (req: Request, res: Response) => {
   if (targetId === (req.session as any).user.id) throw new ValidationError((res.locals as any).t('impostor.cannot_self_vote'));
   db.upsertImpostorPlayer(round.id, { ...player, vote: targetId });
   io.emit('impostorVoteCast', { id: round.id, playerId: (req.session as any).user.id });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true });
 });
 
@@ -429,6 +506,7 @@ app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req: Request, 
     deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
   });
   io.emit('impostorStart', { id: Date.now() });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true });
 });
 
@@ -443,6 +521,7 @@ app.post('/api/admin/impostor/start-random', requireAuth, requireAdmin, (req: Re
     deadline, createdBy: (req.session as any).user.username, createdAt: new Date().toISOString()
   });
   io.emit('impostorStart', { id: Date.now() });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true, realWord: pair.real, fakeWord: pair.fake });
 });
 
@@ -458,6 +537,7 @@ app.post('/api/admin/impostor/assign', requireAuth, requireAdmin, (req: Request,
   db.upsertImpostorPlayer(round.id, { ...round.players[impostorId], isImpostor: true });
   db.updateImpostorRound(round.id, { impostorId });
   io.emit('impostorAssign', { id: round.id });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true, impostorId });
 });
 
@@ -466,6 +546,7 @@ app.post('/api/admin/impostor/voting-phase', requireAuth, requireAdmin, (req: Re
   if (!round || round.phase !== 'submission') throw new ValidationError((res.locals as any).t('impostor.no_round'));
   db.updateImpostorRound(round.id, { phase: 'voting' });
   io.emit('impostorVoting', { id: round.id });
+  io.emit('impostorStateUpdate', buildImpostorState());
   res.json({ success: true });
 });
 
@@ -486,6 +567,8 @@ app.post('/api/admin/impostor/reveal', requireAuth, requireAdmin, (req: Request,
     if (pts) db.addImpostorPoints(round.id, pid, pts);
   }
   io.emit('impostorRevealed', { id: round.id, winner });
+  io.emit('impostorStateUpdate', buildImpostorState());
+  for (const pid of Object.keys(round.players)) checkAndEmitBadges(pid);
   res.json({ success: true, winner });
 });
 
@@ -499,6 +582,8 @@ cron.schedule('*/10 * * * * *', () => {
   if (round && !round.revealed && round.deadline && Date.now() >= round.deadline) {
     db.updateRound(round.id, { revealed: 1 });
     io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
+    io.emit('stateUpdate', buildGameState());
+    for (const b of (round.bets || [])) checkAndEmitBadges(b.userId);
     logger.info({ roundId: round.id }, 'Auto-revealed Juste Prix round via cron');
   }
   // Impostor auto-transition: submission -> voting if deadline passed
@@ -507,6 +592,7 @@ cron.schedule('*/10 * * * * *', () => {
     if (imp.impostorId) {
       db.updateImpostorRound(imp.id, { phase: 'voting' });
       io.emit('impostorVoting', { id: imp.id });
+      io.emit('impostorStateUpdate', buildImpostorState());
       logger.info({ roundId: imp.id }, 'Auto-transitioned impostor to voting via cron');
     }
   }
@@ -525,6 +611,8 @@ cron.schedule('*/10 * * * * *', () => {
       if (pts) db.addImpostorPoints(imp.id, pid, pts);
     }
     io.emit('impostorRevealed', { id: imp.id, winner });
+    io.emit('impostorStateUpdate', buildImpostorState());
+    for (const pid of Object.keys(imp.players)) checkAndEmitBadges(pid);
     logger.info({ roundId: imp.id, winner }, 'Auto-revealed impostor round via cron');
   }
 });

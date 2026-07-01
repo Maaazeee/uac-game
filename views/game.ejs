@@ -50,7 +50,8 @@ body{font-family:'Inter','Tajawal',sans-serif;background:linear-gradient(135deg,
 .bet-row input{flex:1}
 .bet-row button{flex-shrink:0}
 .bet-list{margin-top:20px}
-.bet-item{background:#0f0f1a;border-radius:8px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e1e3a;transition:.3s}
+.bet-item{background:#0f0f1a;border-radius:8px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e1e3a;transition:.3s;animation:fadeSlide .4s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
 .bet-item:hover{border-color:#7c3aed}
 .bet-item .avatar{width:28px;height:28px;border-radius:50%;background:#2a2a4a;flex-shrink:0}
 .bet-item .name{flex:1;font-weight:600;font-size:14px}
@@ -64,7 +65,8 @@ body{font-family:'Inter','Tajawal',sans-serif;background:linear-gradient(135deg,
 .alert-error{background:#f0474733;border:1px solid #f04747;color:#fca5a5}
 .answer-reveal{text-align:center;margin:20px 0;animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)}
 @keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
-.answer-reveal .big{font-size:56px;font-weight:900;color:#ffd700;line-height:1;text-shadow:0 0 30px #ffd70044}
+.answer-reveal .big{font-size:56px;font-weight:900;color:#ffd700;line-height:1;text-shadow:0 0 30px #ffd70044;animation:revealPop .6s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes revealPop{0%{opacity:0;transform:scale(.3) rotate(-10deg)}50%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
 .answer-reveal .sub{color:#888;margin-top:8px;font-size:14px}
 .timer{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;padding:10px 16px;border-radius:8px;background:#0f0f1a;border:1px solid #2a2a4a;font-size:14px;transition:.3s}
 .timer.warning{border-color:#f04747;background:#f0474711;animation:pulse 1s ease-in-out infinite}
@@ -101,6 +103,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
       <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
       <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
       <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+      <button class="lang-btn" id="mute-btn" onclick="toggleMute()" style="font-size:14px">🔊</button>
     </div>
   </div>
   <div class="user-info">
@@ -231,7 +234,8 @@ var app = new Vue({
     timerInterval: null,
     wasRevealed: false,
     wasNotRevealed: false,
-    funStats: null
+    funStats: null,
+    userId: '<%= user.id %>'
   },
   computed: {
     sortedBets() {
@@ -349,6 +353,38 @@ var app = new Vue({
       if (data.round && data.round.revealed) t = '🔓 ' + data.round.answer + ' — ' + t;
       else if (data.round) t = '❓ ' + t;
       document.title = t;
+    },
+    updateFromState(data) {
+      var s = window.__appSelf || this;
+      s.currentRound = data.round;
+      s.bets = data.bets || [];
+      s.userAlreadyBet = data.bets.some(function(b) { return b.userId === s.userId; });
+      s.loading = false;
+      s.updateTitle(data);
+      // Detect reveal transition
+      if (data.round && data.round.revealed && data.round.answer !== null && !s.wasRevealed) {
+        s.wasRevealed = true;
+        s.funStats = s.computeFunStats(data);
+        if (typeof playWin === 'function') playWin();
+        if (typeof fireConfetti === 'function') fireConfetti(4000);
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+          new Notification(s.translations.round_revealed || 'Réponses dévoilées !', { body: data.round.answer + ' — ' + data.round.question });
+        }
+      }
+      if (data.round && !data.round.revealed) s.wasRevealed = false;
+      if (!data.round || data.round.revealed) s.wasNotRevealed = false;
+      // Timer
+      if (data.round && data.round.deadline) {
+        s.updateRemaining(data.round.deadline);
+        if (!s.timerInterval) {
+          s.timerInterval = setInterval(function() {
+            if (s.currentRound && s.currentRound.deadline) s.updateRemaining(s.currentRound.deadline);
+          }, 1000);
+        }
+      } else {
+        s.remaining = 0;
+        if (s.timerInterval) { clearInterval(s.timerInterval); s.timerInterval = null; }
+      }
     }
   },
   mounted() {
@@ -356,22 +392,33 @@ var app = new Vue({
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
     var socket = io();
     var self = this;
+    window.__appSelf = self;
+    socket.emit('register', '<%= user.id %>');
+    socket.on('stateUpdate', function(data) {
+      self.updateFromState(data);
+    });
     socket.on('newRound', function() {
-      self.loadState();
       showToast(self.translations.new_round || 'Nouvelle question disponible !', 'info');
       if (typeof playBet === 'function') playBet();
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
         new Notification(self.translations.new_round || 'Nouvelle question !', { body: self.currentRound?.question });
       }
     });
-    socket.on('roundRevealed', function() { self.loadState(); showToast(self.translations.round_revealed || 'Réponses dévoilées !', 'success'); });
-    socket.on('betUpdate', function() { self.loadState(); });
+    socket.on('roundRevealed', function() { showToast(self.translations.round_revealed || 'Réponses dévoilées !', 'success'); });
+    socket.on('betUpdate', function() {});
+    socket.on('badgeUnlocked', function(data) {
+      if (data.badges && data.badges.length) {
+        showToast('🏆 ' + (self.translations.badge_unlocked || 'Badge débloqué') + ': ' + data.badges.join(', '), 'success');
+      }
+    });
     // Enter key shortcut for bet
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && document.activeElement === document.getElementById('bet-value')) submitBet();
     });
     // Fallback polling if socket disconnects
     setInterval(function() { this.loadState(); }.bind(this), 30000);
+    // Mute button init
+    updateMuteBtn();
   },
   beforeDestroy() { if (this.timerInterval) clearInterval(this.timerInterval); }
 });
@@ -414,6 +461,20 @@ function showError(msg) {
   el.textContent = msg;
   el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function toggleMute() {
+  var muted = getCookie('mute') === '1';
+  document.cookie = 'mute=' + (muted ? '0' : '1') + '; path=/; max-age=' + 365*24*60*60;
+  updateMuteBtn();
+}
+function updateMuteBtn() {
+  var btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getCookie('mute') === '1' ? '🔇' : '🔊';
+}
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
 }
 </script>
 </body>

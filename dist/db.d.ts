@@ -131,6 +131,16 @@ declare function upsertImpostorPlayer(roundId: number, player: ImpostorPlayer): 
 declare function addImpostorPoints(roundId: number, userId: string, points: number): void;
 declare function getLeaderboard(type?: string): LeaderboardEntry[];
 declare function getUserStats(userId: string): UserStats;
+export interface ImpostorGameEntry {
+    realWord: string;
+    fakeWord: string;
+    role: string;
+    winner: string;
+    points: number;
+    impostorFound: boolean | null;
+    createdAt: string;
+}
+declare function getImpostorGameHistory(userId: string): ImpostorGameEntry[];
 declare function getImpostorStats(userId: string): ImpostorStats;
 declare function getAllQuestions(): Array<{
     q: Record<string, string>;
@@ -177,5 +187,5 @@ declare function getRandomWord(lang?: string): {
 } | null;
 declare function getLastRoundIds(count?: number): Record<string, unknown>[];
 declare function getLastImpostorRoundIds(count?: number): Record<string, unknown>[];
-export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
+export { init, save, getUser, upsertUser, getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds, getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds, getLeaderboard, getUserStats, getImpostorStats, getImpostorGameHistory, getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion, getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord, getBets, getImpostorPlayers, getImpostorPoints };
 //# sourceMappingURL=db.d.ts.map

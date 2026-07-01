@@ -1,5 +1,12 @@
 var audioCtx = null;
 
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+function isMuted() { return getCookie('mute') === '1'; }
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
@@ -7,6 +14,7 @@ function getAudioCtx() {
 
 function playTone(freq, duration, type, volume) {
   try {
+    if (isMuted()) return;
     var ctx = getAudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();

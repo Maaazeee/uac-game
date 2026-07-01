@@ -465,6 +465,32 @@ function getUserStats(userId: string): UserStats {
   return { totalBets, wins, points, bestRank, top3Count, gameHistory: history };
 }
 
+export interface ImpostorGameEntry {
+  realWord: string; fakeWord: string; role: string;
+  winner: string; points: number; impostorFound: boolean | null;
+  createdAt: string;
+}
+
+function getImpostorGameHistory(userId: string): ImpostorGameEntry[] {
+  const r = exec(`
+    SELECT ir.realWord, ir.fakeWord, ip.isImpostor, ir.winner,
+      COALESCE(ipt.points,0) as pts, ir.createdAt
+    FROM impostor_players ip JOIN impostor_rounds ir ON ip.roundId = ir.id
+    LEFT JOIN impostor_points ipt ON ip.roundId = ipt.roundId AND ip.userId = ipt.userId
+    WHERE ip.userId = ? AND ir.phase = 'revealed'
+    ORDER BY ir.id ASC
+  `, [userId]);
+  if (!r.length) return [];
+  return r[0].values.map(row => ({
+    realWord: row[0] as string, fakeWord: row[1] as string,
+    role: row[2] ? 'impostor' : 'player',
+    winner: row[3] as string,
+    points: row[4] as number,
+    impostorFound: row[2] ? null : (row[3] === 'players'),
+    createdAt: row[5] as string
+  }));
+}
+
 function getImpostorStats(userId: string): ImpostorStats {
   const r = exec(`
     SELECT ip.isImpostor, COALESCE(ipt.points,0) as pts, ir.winner
@@ -593,7 +619,7 @@ export {
   getCurrentRound, getAllRounds, createRound, updateRound, addBet, getLastRoundIds,
   getImpostorState, createImpostorRound, updateImpostorRound, upsertImpostorPlayer, addImpostorPoints, getLastImpostorRoundIds,
   getLeaderboard,
-  getUserStats, getImpostorStats,
+  getUserStats, getImpostorStats, getImpostorGameHistory,
   getAllQuestions, addQuestion, updateQuestion, deleteQuestion, getRandomQuestion,
   getAllWords, getAllWordsWithId, addWord, updateWord, deleteWord, getRandomWord,
   getBets, getImpostorPlayers, getImpostorPoints

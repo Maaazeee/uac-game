@@ -76,7 +76,8 @@ h1{font-size:22px;font-weight:900;margin-bottom:4px}
 .alert-error{background:#f0474733;border:1px solid #f04747;color:#fca5a5}
 .alert-warning{background:#f59e0b22;border:1px solid #f59e0b;color:#fbbf24}
 .result-box{background:#0f0f1a;border-radius:12px;padding:20px;text-align:center;margin:12px 0}
-.result-box .big{font-size:32px;font-weight:900;margin-bottom:4px}
+.result-box .big{font-size:32px;font-weight:900;margin-bottom:4px;animation:revealPop .6s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes revealPop{0%{opacity:0;transform:scale(.3) rotate(-10deg)}50%{transform:scale(1.1) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
 .result-box .impostor{color:#f04747}
 .result-box .winner{color:#43b581}
 .result-box .label{color:#888;font-size:13px}
@@ -92,7 +93,13 @@ h1{font-size:22px;font-weight:900;margin-bottom:4px}
 .timer .count{font-weight:900;font-size:20px;color:#c084fc;min-width:60px;text-align:center}
 .timer.warning .count{color:#f04747}
 footer{text-align:center;padding:30px;color:#555;font-size:13px}
-[dir="rtl"] .card{text-align:right}
+  [dir="rtl"] .card{text-align:right}
+.toast-container{position:fixed;top:80px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px;max-width:350px}
+.toast{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;animation:slideInRight .3s ease;box-shadow:0 4px 20px #00000044}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+.toast-info{background:#a855f7;color:#fff}
+.toast-success{background:#43b581;color:#fff}
+.toast-warning{background:#f59e0b;color:#000}
 </style>
 </head>
 <body>
@@ -105,6 +112,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
       <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
       <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
       <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+      <button class="lang-btn" id="mute-btn" onclick="toggleMute()" style="font-size:14px">🔊</button>
     </div>
   </div>
   <div class="user-info">
@@ -118,6 +126,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 </div>
 
 <div class="container">
+  <div class="toast-container" id="toast-container"></div>
   <div class="top-links">
     <a href="/leaderboard">🏆 <%= t('nav.leaderboard') %></a>
   </div>
@@ -376,6 +385,8 @@ var app = new Vue({
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
     var socket = io();
     var self = this;
+    socket.emit('register', '<%= user.id %>');
+    socket.on('impostorStateUpdate', function() { self.fetchState(); });
     socket.on('impostorStart', function() { self.fetchState(); });
     socket.on('impostorAssign', function() { self.fetchState(); });
     socket.on('impostorVoting', function() { self.fetchState(); if (typeof playImpostorVoting === 'function') playImpostorVoting(); });
@@ -383,15 +394,44 @@ var app = new Vue({
     socket.on('impostorPlayerJoined', function() { self.fetchState(); });
     socket.on('impostorWordSubmitted', function() { self.fetchState(); if (typeof playBet === 'function') playBet(); });
     socket.on('impostorVoteCast', function() { self.fetchState(); if (typeof playVote === 'function') playVote(); });
+    socket.on('badgeUnlocked', function(data) {
+      if (data.badges && data.badges.length) {
+        showToast('🏆 ' + (translations.badge_unlocked || 'Badge débloqué') + ': ' + data.badges.join(', '), 'success');
+      }
+    });
     // Enter key shortcut for word submission
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && self.round && self.round.phase === 'submission' && !self.submitted && self.myWord.trim()) self.submitWord();
     });
     // Fallback polling
     setInterval(function() { this.fetchState(); }.bind(this), 30000);
+    // Mute button init
+    updateMuteBtn();
   },
   beforeDestroy() { if (this.timerInterval) clearInterval(this.timerInterval); }
 });
+function toggleMute() {
+  var muted = getCookie('mute') === '1';
+  document.cookie = 'mute=' + (muted ? '0' : '1') + '; path=/; max-age=' + 365*24*60*60;
+  updateMuteBtn();
+}
+function updateMuteBtn() {
+  var btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getCookie('mute') === '1' ? '🔇' : '🔊';
+}
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+function showToast(msg, type) {
+  var container = document.getElementById('toast-container');
+  if (!container) return;
+  var el = document.createElement('div');
+  el.className = 'toast toast-' + (type || 'info');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(function() { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function() { el.remove(); }, 300); }, 4000);
+}
 </script>
 </body>
 </html>

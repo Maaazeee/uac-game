@@ -77,6 +77,7 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
       <a href="?lang=fr" class="lang-btn <%= lang === 'fr' ? 'active' : '' %>">FR</a>
       <a href="?lang=en" class="lang-btn <%= lang === 'en' ? 'active' : '' %>">EN</a>
       <a href="?lang=ar" class="lang-btn <%= lang === 'ar' ? 'active' : '' %>">AR</a>
+      <button class="lang-btn" id="mute-btn" onclick="toggleMute()" style="font-size:14px">🔊</button>
     </div>
   </div>
   <div class="user-info">
@@ -165,6 +166,43 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
   <% }) %>
 </div>
 
+<% if (impHistory.length > 0) { %>
+<h2 class="section-title" style="margin-top:24px">🕵️ <%= t('profile.impostor_history') %></h2>
+<% impHistory.slice(-10).reverse().forEach(function(g) { %>
+  <div class="game-card">
+    <div class="q"><%= g.realWord %> / <%= g.fakeWord %></div>
+    <div class="meta">
+      <div>
+        <span class="rank-badge <%= g.role === 'impostor' ? 'gold' : '' %>"><%= g.role === 'impostor' ? '😈' : '🕵️' %></span>
+        <span style="font-size:12px;color:#888">
+          <%= g.role === 'impostor' ? t('profile.impostor_role') : t('profile.player_role') %>
+        </span>
+      </div>
+      <div style="margin-top:4px;font-size:12px;color:<%= g.winner === g.role ? '#43b581' : '#f04747' %>">
+        <%= g.winner === g.role ? '✅ ' + t('profile.won') : '❌ ' + t('profile.lost') %>
+        <% if (g.points > 0) { %> (+<%= g.points %>pts)<% } %>
+      </div>
+    </div>
+  </div>
+<% }) %>
+<% } %>
+
 <footer><%= t('profile.footer') %></footer>
+<script>
+function toggleMute() {
+  var muted = getCookie('mute') === '1';
+  document.cookie = 'mute=' + (muted ? '0' : '1') + '; path=/; max-age=' + 365*24*60*60;
+  updateMuteBtn();
+}
+function updateMuteBtn() {
+  var btn = document.getElementById('mute-btn');
+  if (btn) btn.textContent = getCookie('mute') === '1' ? '🔇' : '🔊';
+}
+function getCookie(name) {
+  var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+updateMuteBtn();
+</script>
 </body>
 </html>

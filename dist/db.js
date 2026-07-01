@@ -22,6 +22,7 @@ exports.getLastImpostorRoundIds = getLastImpostorRoundIds;
 exports.getLeaderboard = getLeaderboard;
 exports.getUserStats = getUserStats;
 exports.getImpostorStats = getImpostorStats;
+exports.getImpostorGameHistory = getImpostorGameHistory;
 exports.getAllQuestions = getAllQuestions;
 exports.addQuestion = addQuestion;
 exports.updateQuestion = updateQuestion;
@@ -470,6 +471,26 @@ function getUserStats(userId) {
         }
     }
     return { totalBets, wins, points, bestRank, top3Count, gameHistory: history };
+}
+function getImpostorGameHistory(userId) {
+    const r = exec(`
+    SELECT ir.realWord, ir.fakeWord, ip.isImpostor, ir.winner,
+      COALESCE(ipt.points,0) as pts, ir.createdAt
+    FROM impostor_players ip JOIN impostor_rounds ir ON ip.roundId = ir.id
+    LEFT JOIN impostor_points ipt ON ip.roundId = ipt.roundId AND ip.userId = ipt.userId
+    WHERE ip.userId = ? AND ir.phase = 'revealed'
+    ORDER BY ir.id ASC
+  `, [userId]);
+    if (!r.length)
+        return [];
+    return r[0].values.map(row => ({
+        realWord: row[0], fakeWord: row[1],
+        role: row[2] ? 'impostor' : 'player',
+        winner: row[3],
+        points: row[4],
+        impostorFound: row[2] ? null : (row[3] === 'players'),
+        createdAt: row[5]
+    }));
 }
 function getImpostorStats(userId) {
     const r = exec(`
