@@ -95,10 +95,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // --- Error handler ---
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): void {
   if (err instanceof AppError) {
+    if (!req.path.startsWith('/api/')) {
+      res.status(err.statusCode).send(res.locals?.t ? res.locals.t('errors.forbidden') : err.message);
+      return;
+    }
     res.status(err.statusCode).json({ error: err.message });
     return;
   }
   logger.error({ err, method: req.method, url: req.originalUrl }, 'Unhandled error');
+  if (!req.path.startsWith('/api/')) {
+    res.status(500).send(res.locals?.t ? res.locals.t('errors.internal') : 'Internal server error');
+    return;
+  }
   res.status(500).json({ error: 'Internal server error' });
 }
 

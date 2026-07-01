@@ -120,10 +120,18 @@ app.use((req, res, next) => {
 // --- Error handler ---
 function errorHandler(err, req, res, next) {
     if (err instanceof errors_1.AppError) {
+        if (!req.path.startsWith('/api/')) {
+            res.status(err.statusCode).send(res.locals?.t ? res.locals.t('errors.forbidden') : err.message);
+            return;
+        }
         res.status(err.statusCode).json({ error: err.message });
         return;
     }
     logger_1.default.error({ err, method: req.method, url: req.originalUrl }, 'Unhandled error');
+    if (!req.path.startsWith('/api/')) {
+        res.status(500).send(res.locals?.t ? res.locals.t('errors.internal') : 'Internal server error');
+        return;
+    }
     res.status(500).json({ error: 'Internal server error' });
 }
 // --- Auth middleware ---

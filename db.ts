@@ -437,7 +437,7 @@ function getImpostorOnlyLeaderboard(): LeaderboardEntry[] {
 function getUserStats(userId: string): UserStats {
   const r = exec(`
     WITH ranked AS (
-      SELECT r.id, r.question, r.answer, b.value, b.createdAt,
+      SELECT r.id, r.question, r.answer, b.value, b.time as createdAt,
         ROW_NUMBER() OVER (PARTITION BY r.id ORDER BY ABS(b.value - r.answer) ASC, CASE WHEN b.value <= r.answer THEN 0 ELSE 1 END ASC) as rnk,
         (SELECT COUNT(*) FROM bets WHERE roundId = r.id) as total
       FROM bets b JOIN rounds r ON b.roundId = r.id
