@@ -1,0 +1,20 @@
+services:
+  uac-game:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GUILD_ID=${GUILD_ID}
+      - ADMINS=${ADMINS}
+      - REDIRECT_URI=${REDIRECT_URI:-https://uac-game.onrender.com/callback}
+    volumes:
+      - uac-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  uac-data:
