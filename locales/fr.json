@@ -61,12 +61,15 @@
   "leaderboard": {
     "title": "Classement - UAC",
     "heading": "Classement",
-    "sub": "Les meilleurs joueurs du Juste Prix",
+    "sub": "Classement général et par jeu",
     "rank": "Rang",
     "player": "Joueur",
     "points": "Points",
     "wins": "Victoires",
     "bets": "Participations",
+    "global": "Général",
+    "justeprix": "Juste Prix",
+    "impostor": "Imposteur",
     "empty": "Aucun classement pour le moment. Les résultats apparaîtront après les premières manches."
   },
   "admin": {

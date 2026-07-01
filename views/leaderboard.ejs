@@ -25,7 +25,10 @@ body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0;m
 .user-info a{color:#f04747;text-decoration:none;font-size:12px}
 .container{max-width:600px;margin:0 auto;padding:32px 16px}
 h1{font-size:24px;font-weight:900;margin-bottom:4px}
-.sub{color:#888;font-size:14px;margin-bottom:24px}
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;background:#0f0f1a;border-radius:10px;padding:4px}
+.tab{flex:1;text-align:center;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;color:#888;border:none;background:none;font-family:inherit}
+.tab:hover{color:#c084fc}
+.tab.active{background:#a855f722;color:#a855f7}
 .leaderboard{list-style:none}
 .lb-item{background:#16213e;border-radius:10px;padding:12px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;border:1px solid #1e2a4a;transition:.2s}
 .lb-item:hover{border-color:#7c3aed}
@@ -71,6 +74,12 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
   <h1>🏆 <%= t('leaderboard.heading') %></h1>
   <p class="sub"><%= t('leaderboard.sub') %></p>
 
+  <div class="tab-bar">
+    <button class="tab" :class="{active: tab === 'global'}" @click="switchTab('global')"><%= t('leaderboard.global') %></button>
+    <button class="tab" :class="{active: tab === 'justeprix'}" @click="switchTab('justeprix')">🎯 <%= t('leaderboard.justeprix') %></button>
+    <button class="tab" :class="{active: tab === 'impostor'}" @click="switchTab('impostor')">🕵️ <%= t('leaderboard.impostor') %></button>
+  </div>
+
   <div id="app">
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
@@ -107,15 +116,20 @@ footer{text-align:center;padding:24px;color:#555;font-size:13px}
 <script>
 new Vue({
   el: '#app',
-  data: { entries: [], loading: true },
+  data: { entries: [], loading: true, tab: 'global' },
   mounted() { this.load(); },
   methods: {
     async load() {
       try {
-        const res = await fetch('/api/leaderboard');
+        const res = await fetch('/api/leaderboard?type=' + this.tab);
         this.entries = await res.json();
       } catch(e) {}
       this.loading = false;
+    },
+    switchTab(t) {
+      this.tab = t;
+      this.loading = true;
+      this.load();
     }
   }
 });

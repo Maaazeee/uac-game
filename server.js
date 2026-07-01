@@ -5,9 +5,13 @@ const cookieParser = require('cookie-parser');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 const { i18nMiddleware } = require('./i18n');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // --- Database JSON ---
@@ -355,6 +359,7 @@ app.post('/api/bet', requireAuth, (req, res) => {
   });
 
   saveDB(db);
+  io.emit('betUpdate', { roundId: round.id, count: round.bets.length });
   res.json({ success: true, count: round.bets.length });
 });
 
@@ -389,6 +394,7 @@ app.post('/api/admin/question', requireAuth, requireAdmin, (req, res) => {
   db.rounds.push(round);
   saveDB(db);
 
+  io.emit('newRound', { id: round.id, question: round.question, deadline: round.deadline, revealed: round.revealed });
   res.json({ success: true, round: { id: round.id, question } });
 });
 
@@ -400,6 +406,7 @@ app.post('/api/admin/reveal', requireAuth, requireAdmin, (req, res) => {
 
   round.revealed = true;
   saveDB(db);
+  io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
   res.json({ success: true });
 });
 
@@ -486,8 +493,55 @@ app.get('/leaderboard', requireAuth, (req, res) => {
   res.render('leaderboard', { user: req.session.user });
 });
 
+function computeJustePrixLeaderboard(rounds) {
+  const scores = {};
+  for (const r of rounds) {
+    if (!r.revealed || !r.bets || r.bets.length === 0) continue;
+    const sorted = [...r.bets].sort((a, b) => {
+      const da = Math.abs(a.value - r.answer);
+      const db = Math.abs(b.value - r.answer);
+      if (da !== db) return da - db;
+      if (a.value <= r.answer && b.value > r.answer) return -1;
+      if (a.value > r.answer && b.value <= r.answer) return 1;
+      return 0;
+    });
+    sorted.forEach((b, i) => {
+      if (!scores[b.userId]) {
+        scores[b.userId] = { userId: b.userId, username: b.username, avatar: b.avatar, points: 0, wins: 0, bets: 0 };
+      }
+      scores[b.userId].bets++;
+      if (i === 0) { scores[b.userId].points += 3; scores[b.userId].wins++; }
+      else if (i === 1) scores[b.userId].points += 2;
+      else if (i === 2) scores[b.userId].points += 1;
+    });
+  }
+  return Object.values(scores).sort((a, b) => b.points - a.points || b.wins - a.wins || b.bets - a.bets);
+}
+
+function computeImpostorLeaderboard(impostorRounds) {
+  const scores = {};
+  if (impostorRounds) {
+    for (const ir of impostorRounds) {
+      if (ir.phase !== 'revealed' || !ir.points) continue;
+      for (const [pid, pts] of Object.entries(ir.points)) {
+        if (!scores[pid]) {
+          const p = ir.players?.[pid];
+          scores[pid] = { userId: pid, username: p?.username || '?', avatar: p?.avatar || '', points: 0, wins: 0, bets: 0 };
+        }
+        scores[pid].points += pts;
+        scores[pid].bets++;
+        if (pts >= 3) scores[pid].wins++;
+      }
+    }
+  }
+  return Object.values(scores).sort((a, b) => b.points - a.points || b.wins - a.wins);
+}
+
 app.get('/api/leaderboard', (req, res) => {
   const db = loadDB();
+  const type = req.query.type || 'global';
+  if (type === 'justeprix') return res.json(computeJustePrixLeaderboard(db.rounds));
+  if (type === 'impostor') return res.json(computeImpostorLeaderboard(db.impostorRounds));
   res.json(computeLeaderboard(db.rounds, db.impostorRounds));
 });
 
@@ -575,6 +629,7 @@ app.post('/api/impostor/join', requireAuth, (req, res) => {
     };
     saveImpostorState(db, round);
   }
+  io.emit('impostorPlayerJoined', { count: Object.keys(round.players).length });
   res.json({ success: true, playerCount: Object.keys(round.players).length });
 });
 
@@ -593,6 +648,7 @@ app.post('/api/impostor/submit', requireAuth, (req, res) => {
 
   player.word = word.trim();
   saveImpostorState(db, round);
+  io.emit('impostorWordSubmitted', { id: round.id, playerId: req.session.user.id });
   res.json({ success: true });
 });
 
@@ -613,6 +669,7 @@ app.post('/api/impostor/vote', requireAuth, (req, res) => {
 
   player.vote = targetId;
   saveImpostorState(db, round);
+  io.emit('impostorVoteCast', { id: round.id, playerId: req.session.user.id });
   res.json({ success: true });
 });
 
@@ -651,6 +708,7 @@ app.post('/api/admin/impostor/start', requireAuth, requireAdmin, (req, res) => {
   db.impostorRounds.push(round);
   saveDB(db);
 
+  io.emit('impostorStart', { id: round.id });
   res.json({ success: true, roundId: round.id });
 });
 
@@ -678,6 +736,7 @@ app.post('/api/admin/impostor/start-random', requireAuth, requireAdmin, (req, re
   if (!db.impostorRounds) db.impostorRounds = [];
   db.impostorRounds.push(round);
   saveDB(db);
+  io.emit('impostorStart', { id: round.id });
   res.json({ success: true, roundId: round.id, realWord, fakeWord });
 });
 
@@ -699,6 +758,7 @@ app.post('/api/admin/impostor/assign', requireAuth, requireAdmin, (req, res) => 
   if (round.players[impostorId]) round.players[impostorId].isImpostor = true;
 
   saveImpostorState(db, round);
+  io.emit('impostorAssign', { id: round.id });
   res.json({ success: true, impostorId });
 });
 
@@ -710,6 +770,7 @@ app.post('/api/admin/impostor/voting-phase', requireAuth, requireAdmin, (req, re
 
   round.phase = 'voting';
   saveImpostorState(db, round);
+  io.emit('impostorVoting', { id: round.id });
   res.json({ success: true });
 });
 
@@ -743,11 +804,12 @@ app.post('/api/admin/impostor/reveal', requireAuth, requireAdmin, (req, res) => 
   round.points = points;
 
   saveImpostorState(db, round);
+  io.emit('impostorRevealed', { id: round.id, winner: round.winner });
   res.json({ success: true, winner: round.winner });
 });
 
 // --- Start ---
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Serveur UAC lancé sur http://localhost:${PORT}`);
   console.log(`Admins configurés: ${ADMINS.join(', ') || 'aucun'}`);
   if (!CLIENT_ID || !CLIENT_SECRET) {

@@ -61,12 +61,15 @@
   "leaderboard": {
     "title": "Leaderboard - UAC",
     "heading": "Leaderboard",
-    "sub": "The best Price is Right players",
+    "sub": "Global and per-game rankings",
     "rank": "Rank",
     "player": "Player",
     "points": "Points",
     "wins": "Wins",
     "bets": "Rounds",
+    "global": "Global",
+    "justeprix": "Price is Right",
+    "impostor": "Impostor",
     "empty": "No rankings yet. Results will appear after the first rounds."
   },
   "admin": {
