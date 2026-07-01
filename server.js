@@ -254,6 +254,7 @@ app.get('/profile', requireAuth, (req, res) => {
 function autoReveal(round) {
   if (!round.revealed && round.deadline && Date.now() >= round.deadline) {
     round.revealed = true;
+    io.emit('roundRevealed', { id: round.id, answer: round.answer, reason: round.reason });
     return true;
   }
   return false;
