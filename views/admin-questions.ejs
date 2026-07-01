@@ -22,18 +22,24 @@ body{font-family:'Inter','Tajawal',sans-serif;background:#1a1a2e;color:#e0e0e0}
 .user-info{display:flex;align-items:center;gap:10px;font-size:13px}
 .user-info img{width:28px;height:28px;border-radius:50%;border:2px solid #f04747}
 .user-info a{color:#f04747;text-decoration:none;font-size:12px}
-.container{max-width:800px;margin:0 auto;padding:24px 16px}
+.container{max-width:900px;margin:0 auto;padding:24px 16px}
 h1{font-size:22px;font-weight:900;margin-bottom:4px}
 h1 span{color:#c084fc}
 .sub{color:#888;font-size:13px;margin-bottom:20px}
 .grid{display:grid;grid-template-columns:1fr 2fr;gap:16px;align-items:start}
-@media(max-width:700px){.grid{grid-template-columns:1fr}}
+@media(max-width:750px){.grid{grid-template-columns:1fr}}
 .card{background:#16213e;border-radius:12px;padding:20px;border:1px solid #1e2a4a}
-.card h2{font-size:15px;margin-bottom:12px;color:#c084fc;display:flex;align-items:center;justify-content:space-between}
+.card h2{font-size:15px;margin-bottom:12px;color:#c084fc}
+.lang-tabs{display:flex;gap:4px;margin-bottom:8px}
+.lang-tab{background:none;border:1px solid #333;color:#888;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+.lang-tab.active{border-color:#a855f7;color:#a855f7;background:#a855f722}
+.lang-fields .field-group{display:none}
+.lang-fields .field-group.active{display:block}
 .card label{display:block;font-size:12px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
-.card input,.card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:10px;font-family:inherit}
+.card input,.card textarea{background:#0f0f1a;border:2px solid #2a2a4a;color:#fff;padding:10px 12px;border-radius:8px;font-size:14px;outline:none;transition:.2s;width:100%;margin-bottom:8px;font-family:inherit}
 .card input:focus,.card textarea:focus{border-color:#a855f7}
-.card textarea{resize:vertical;min-height:50px}
+.card textarea{resize:vertical;min-height:40px}
+.lang-badge{font-size:10px;color:#888;text-transform:uppercase;margin-bottom:2px}
 .btn{display:inline-flex;align-items:center;gap:6px;background:#a855f7;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:.2s}
 .btn:hover{background:#9333ea}
 .btn-green{background:#43b581}
@@ -45,13 +51,17 @@ h1 span{color:#c084fc}
 .alert-success{background:#43b58122;border:1px solid #43b581;color:#6ee7b7}
 .alert-error{background:#f0474722;border:1px solid #f04747;color:#fca5a5}
 .q-item{background:#0f0f1a;border-radius:8px;padding:12px 14px;margin-bottom:6px;border:1px solid #1e1e3a;font-size:13px;display:flex;align-items:flex-start;gap:10px}
-.q-item .content{flex:1}
-.q-item .q-text{font-weight:600;margin-bottom:2px}
-.q-item .q-meta{color:#888;font-size:12px}
+.q-item .content{flex:1;min-width:0}
+.q-item .q-langs{display:flex;gap:12px;flex-wrap:wrap}
+.q-item .q-lang{flex:1;min-width:0}
+.q-item .q-lang-label{font-size:10px;color:#555;text-transform:uppercase}
+.q-item .q-text{font-weight:600;word-break:break-word;font-size:13px}
+.q-item .q-meta{color:#888;font-size:12px;margin-top:2px}
 .q-item .q-actions{display:flex;gap:4px;flex-shrink:0}
-.q-count{color:#888;font-size:13px;margin-bottom:12px}
+.q-count{color:#888;font-size:13px}
 .empty{text-align:center;color:#888;padding:30px;font-size:14px}
 footer{text-align:center;padding:30px;color:#555;font-size:13px}
+[dir="rtl"] .q-lang{text-align:right}
 </style>
 </head>
 <body>
@@ -75,7 +85,7 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
 
 <div class="container">
   <h1>📚 <span><%= t('admin_questions.heading') %></span></h1>
-  <p class="sub"><%= t('admin_questions.sub') %></p>
+  <p class="sub"><%- t('admin_questions.sub') %></p>
 
   <div id="error" class="alert alert-error" style="display:none"></div>
   <div id="success" class="alert alert-success" style="display:none"></div>
@@ -83,13 +93,38 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
   <div class="grid">
     <div class="card">
       <h2 id="form-title">➕ <%= t('admin_questions.add') %></h2>
-      <label><%= t('admin_questions.question_label') %></label>
-      <textarea id="q" placeholder="<%= t('admin_questions.question_placeholder') %>"></textarea>
+
+      <div class="lang-tabs">
+        <button class="lang-tab active" onclick="switchLang('fr')">FR</button>
+        <button class="lang-tab" onclick="switchLang('en')">EN</button>
+        <button class="lang-tab" onclick="switchLang('ar')">AR</button>
+      </div>
+
+      <div class="lang-fields">
+        <div class="field-group active" data-lang="fr">
+          <label><%= t('admin_questions.question_label') %></label>
+          <textarea id="q-fr" placeholder="<%= t('admin_questions.question_placeholder') %>"></textarea>
+          <label><%= t('admin_questions.reason_label') %></label>
+          <input id="r-fr" placeholder="<%= t('admin_questions.reason_placeholder') %>">
+        </div>
+        <div class="field-group" data-lang="en">
+          <label><%= t('admin_questions.question_label') %></label>
+          <textarea id="q-en" placeholder="<%= t('admin_questions.question_placeholder_en') %>"></textarea>
+          <label><%= t('admin_questions.reason_label') %></label>
+          <input id="r-en" placeholder="<%= t('admin_questions.reason_placeholder') %>">
+        </div>
+        <div class="field-group" data-lang="ar">
+          <label><%= t('admin_questions.question_label') %></label>
+          <textarea id="q-ar" placeholder="<%= t('admin_questions.question_placeholder_ar') %>"></textarea>
+          <label><%= t('admin_questions.reason_label') %></label>
+          <input id="r-ar" placeholder="<%= t('admin_questions.reason_placeholder') %>">
+        </div>
+      </div>
+
       <label><%= t('admin_questions.answer_label') %></label>
       <input type="number" id="a" placeholder="<%= t('admin_questions.answer_placeholder') %>" step="any">
-      <label><%= t('admin_questions.reason_label') %></label>
-      <input id="r" placeholder="<%= t('admin_questions.reason_placeholder') %>">
-      <div style="display:flex;gap:8px">
+
+      <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-green" id="save-btn" onclick="saveQuestion()">💾 <%= t('admin_questions.save') %></button>
         <button class="btn btn-sm" id="cancel-btn" onclick="cancelEdit()" style="display:none"><%= t('admin_questions.cancel') %></button>
       </div>
@@ -102,11 +137,18 @@ footer{text-align:center;padding:30px;color:#555;font-size:13px}
   </div>
 </div>
 
-<footer><%= t('admin_questions.footer') || 'UAC' %></footer>
+<footer><%= t('admin_questions.footer') %></footer>
 
 <script>
 var translations = <%- JSON.stringify(locale.admin_questions || locale) %>;
 var editingIndex = -1;
+
+function switchLang(lang) {
+  document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.field-group').forEach(g => g.classList.remove('active'));
+  document.querySelector('.lang-tab[onclick*="' + lang + '"]').classList.add('active');
+  document.querySelector('.field-group[data-lang="' + lang + '"]').classList.add('active');
+}
 
 async function api(url, opts) {
   const res = await fetch(url, opts);
@@ -126,10 +168,52 @@ function showSuccess(msg) {
   setTimeout(() => el.style.display = 'none', 4000);
 }
 
+function getFormData() {
+  return {
+    q: {
+      fr: document.getElementById('q-fr').value.trim(),
+      en: document.getElementById('q-en').value.trim(),
+      ar: document.getElementById('q-ar').value.trim()
+    },
+    a: parseFloat(document.getElementById('a').value),
+    r: {
+      fr: document.getElementById('r-fr').value.trim(),
+      en: document.getElementById('r-en').value.trim(),
+      ar: document.getElementById('r-ar').value.trim()
+    }
+  };
+}
+
+function setFormData(data) {
+  if (typeof data.q === 'object' && data.q !== null) {
+    document.getElementById('q-fr').value = data.q.fr || '';
+    document.getElementById('q-en').value = data.q.en || '';
+    document.getElementById('q-ar').value = data.q.ar || '';
+  } else {
+    document.getElementById('q-fr').value = data.q || '';
+    document.getElementById('q-en').value = '';
+    document.getElementById('q-ar').value = '';
+  }
+  document.getElementById('a').value = data.a;
+  if (typeof data.r === 'object' && data.r !== null) {
+    document.getElementById('r-fr').value = data.r.fr || '';
+    document.getElementById('r-en').value = data.r.en || '';
+    document.getElementById('r-ar').value = data.r.ar || '';
+  } else {
+    document.getElementById('r-fr').value = data.r || '';
+    document.getElementById('r-en').value = '';
+    document.getElementById('r-ar').value = '';
+  }
+}
+
 function clearForm() {
-  document.getElementById('q').value = '';
+  document.getElementById('q-fr').value = '';
+  document.getElementById('q-en').value = '';
+  document.getElementById('q-ar').value = '';
   document.getElementById('a').value = '';
-  document.getElementById('r').value = '';
+  document.getElementById('r-fr').value = '';
+  document.getElementById('r-en').value = '';
+  document.getElementById('r-ar').value = '';
   editingIndex = -1;
   document.getElementById('form-title').innerHTML = '➕ ' + (window.translations.add || 'Ajouter');
   document.getElementById('save-btn').innerHTML = '💾 ' + (window.translations.save || 'Enregistrer');
@@ -139,24 +223,23 @@ function clearForm() {
 function cancelEdit() { clearForm(); }
 
 async function saveQuestion() {
-  const q = document.getElementById('q').value.trim();
-  const a = parseFloat(document.getElementById('a').value);
-  const r = document.getElementById('r').value.trim();
-  if (!q || isNaN(a)) { showError(window.translations.question_required || 'Question et réponse requises'); return; }
+  const data = getFormData();
+  if (!data.q.fr) { showError(window.translations.question_required || 'Question FR requise'); return; }
+  if (isNaN(data.a)) { showError(window.translations.answer_required || 'Réponse requise'); return; }
 
   try {
     if (editingIndex >= 0) {
       await api('/api/admin/questions/' + editingIndex, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q, a, r })
+        body: JSON.stringify(data)
       });
       showSuccess('✅ ' + (window.translations.updated || 'Question modifiée'));
     } else {
       await api('/api/admin/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q, a, r })
+        body: JSON.stringify(data)
       });
       showSuccess('✅ ' + (window.translations.added || 'Question ajoutée'));
     }
@@ -168,10 +251,7 @@ async function saveQuestion() {
 async function editQuestion(index) {
   try {
     const questions = await api('/api/admin/questions');
-    const q = questions[index];
-    document.getElementById('q').value = q.q;
-    document.getElementById('a').value = q.a;
-    document.getElementById('r').value = q.r || '';
+    setFormData(questions[index]);
     editingIndex = index;
     document.getElementById('form-title').innerHTML = '✏️ ' + (window.translations.edit || 'Modifier');
     document.getElementById('save-btn').innerHTML = '💾 ' + (window.translations.save || 'Enregistrer');
@@ -188,6 +268,23 @@ async function deleteQuestion(index) {
   } catch(e) { showError(e.message); }
 }
 
+function renderQ(data) {
+  var q = typeof data.q === 'object' ? data.q : { fr: data.q, en: '', ar: '' };
+  var r = typeof data.r === 'object' ? data.r : { fr: data.r || '', en: '', ar: '' };
+  var langs = ['fr', 'en', 'ar'];
+  return langs.map(function(l) {
+    if (!q[l]) return '';
+    return '<div class="q-lang"><div class="q-lang-label">' + l.toUpperCase() + '</div><div class="q-text">' + q[l] + '</div></div>';
+  }).filter(Boolean).join('');
+}
+
+function renderMeta(data) {
+  var r = typeof data.r === 'object' ? data.r : { fr: data.r || '', en: '', ar: '' };
+  var parts = ['🎯 ' + data.a];
+  if (r.fr) parts.push('💬 ' + r.fr);
+  return parts.join(' · ');
+}
+
 async function loadQuestions() {
   try {
     const questions = await api('/api/admin/questions');
@@ -197,18 +294,18 @@ async function loadQuestions() {
       el.innerHTML = '<div class="empty">📭 ' + (window.translations.empty || 'Aucune question') + '</div>';
       return;
     }
-    el.innerHTML = questions.map((q, i) => `
-      <div class="q-item">
-        <div class="content">
-          <div class="q-text">${q.q}</div>
-          <div class="q-meta">🎯 ${q.a} ${q.r ? '· 💬 ' + q.r : ''}</div>
-        </div>
-        <div class="q-actions">
-          <button class="btn btn-sm" onclick="editQuestion(${i})">✏️</button>
-          <button class="btn btn-sm btn-red" onclick="deleteQuestion(${i})">🗑️</button>
-        </div>
-      </div>
-    `).join('');
+    el.innerHTML = questions.map(function(q, i) {
+      return '<div class="q-item">' +
+        '<div class="content">' +
+          '<div class="q-langs">' + renderQ(q) + '</div>' +
+          '<div class="q-meta">' + renderMeta(q) + '</div>' +
+        '</div>' +
+        '<div class="q-actions">' +
+          '<button class="btn btn-sm" onclick="editQuestion(' + i + ')">✏️</button>' +
+          '<button class="btn btn-sm btn-red" onclick="deleteQuestion(' + i + ')">🗑️</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
   } catch(e) {
     document.getElementById('q-list').innerHTML = '<p style="color:#f04747">' + (window.translations.error || 'Erreur') + '</p>';
   }

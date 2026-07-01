@@ -354,8 +354,11 @@ app.get('/api/admin/questions', requireAuth, requireAdmin, (req, res) => {
 app.post('/api/admin/questions', requireAuth, requireAdmin, (req, res) => {
   const { q, a, r } = req.body;
   if (!q || a === undefined) return res.status(400).json({ error: 'Question (q) et réponse (a) requises' });
+  const question = typeof q === 'object' && q.fr
+    ? { q: { fr: q.fr.trim(), en: (q.en || '').trim(), ar: (q.ar || '').trim() }, a: parseFloat(a), r: typeof r === 'object' ? { fr: (r.fr || '').trim(), en: (r.en || '').trim(), ar: (r.ar || '').trim() } : { fr: (r || '').trim(), en: '', ar: '' } }
+    : { q: q.trim(), a: parseFloat(a), r: (r || '').trim() };
   const questions = loadQuestions();
-  questions.push({ q: q.trim(), a: parseFloat(a), r: (r || '').trim() });
+  questions.push(question);
   saveQuestions(questions);
   res.json({ success: true, index: questions.length - 1 });
 });
@@ -367,7 +370,9 @@ app.put('/api/admin/questions/:index', requireAuth, requireAdmin, (req, res) => 
   const questions = loadQuestions();
   if (index < 0 || index >= questions.length) return res.status(404).json({ error: 'Question introuvable' });
   if (!q || a === undefined) return res.status(400).json({ error: 'Question (q) et réponse (a) requises' });
-  questions[index] = { q: q.trim(), a: parseFloat(a), r: (r || '').trim() };
+  questions[index] = typeof q === 'object' && q.fr
+    ? { q: { fr: q.fr.trim(), en: (q.en || '').trim(), ar: (q.ar || '').trim() }, a: parseFloat(a), r: typeof r === 'object' ? { fr: (r.fr || '').trim(), en: (r.en || '').trim(), ar: (r.ar || '').trim() } : { fr: (r || '').trim(), en: '', ar: '' } }
+    : { q: q.trim(), a: parseFloat(a), r: (r || '').trim() };
   saveQuestions(questions);
   res.json({ success: true });
 });
@@ -382,13 +387,19 @@ app.delete('/api/admin/questions/:index', requireAuth, requireAdmin, (req, res) 
   res.json({ success: true });
 });
 
-// Get random funny question
+// Get random funny question (localized)
 app.get('/api/admin/random-question', requireAuth, requireAdmin, (req, res) => {
   try {
     const questions = loadQuestions();
-    if (questions.length === 0) return res.json({ q: "Alger est la capitale de ?", a: 1962, r: "Année d'indépendance" });
+    if (questions.length === 0) return res.json({ q: '', a: 0, r: '' });
     const q = questions[Math.floor(Math.random() * questions.length)];
-    res.json(q);
+    const lang = res.locals.lang || 'fr';
+    const localized = {
+      q: typeof q.q === 'object' ? (q.q[lang] || q.q.fr) : q.q,
+      a: q.a,
+      r: typeof q.r === 'object' ? (q.r[lang] || q.r.fr) : (q.r || '')
+    };
+    res.json(localized);
   } catch { res.json({ q: '', a: 0, r: '' }); }
 });
 

@@ -114,6 +114,8 @@
     "edit": "Edit question",
     "question_label": "Question",
     "question_placeholder": "How many...",
+    "question_placeholder_en": "How many...",
+    "question_placeholder_ar": "كم...",
     "answer_label": "Answer (number)",
     "answer_placeholder": "E.g.: 42",
     "reason_label": "Explanation (optional)",

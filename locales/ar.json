@@ -114,6 +114,8 @@
     "edit": "تعديل السؤال",
     "question_label": "السؤال",
     "question_placeholder": "كم...",
+    "question_placeholder_en": "How many...",
+    "question_placeholder_ar": "كم...",
     "answer_label": "الإجابة (رقم)",
     "answer_placeholder": "مثال: 42",
     "reason_label": "شرح (اختياري)",

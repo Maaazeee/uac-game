@@ -1,27 +1,127 @@
 [
-  {"q": "Combien de pots de Nutella faudrait-il pour remplir une baignoire ?", "a": 280, "r": "Une baignoire fait ~140L, un pot de Nutella fait 500ml = 280 pots."},
-  {"q": "Combien de mètres de PQ utilise un humain moyen par an ?", "a": 9500, "r": "Environ 9,5 km de papier toilette par an et par personne."},
-  {"q": "Combien de chips faudrait-il pour atteindre la Lune si on les empilait ?", "a": 750000000, "r": "Une chips fait ~0,5mm, la Lune est à 384 400 km = ~750 millions de chips."},
-  {"q": "Combien de SMS pourrait-on envoyer avec la mémoire d'un pigeon ?", "a": 37, "r": "Un pigeon peut stocker ~300 bits d'info = ~37 caractères."},
-  {"q": "Combien de litres de lait une vache produit-elle par jour ?", "a": 28, "r": "Une vache laitière produit ~28 litres par jour."},
-  {"q": "Combien de bulles minimum pour emballer une personne dans du papier bulle ?", "a": 120000, "r": "Surface corporelle ~1,8m², chaque bulle fait ~1,5cm² = ~120 000 bulles."},
-  {"q": "Combien de grimaces un bébé fait-il en moyenne par heure ?", "a": 12, "r": "Un bébé fait entre 10 et 15 grimaces par heure."},
-  {"q": "Combien de fois par an un humain cligne-t-il des yeux ?", "a": 4200000, "r": "~15 clignement/min × 60 × 24 × 365 = ~4,2 millions par an."},
-  {"q": "Combien de kilos de crocodile mange un crocodile par an ?", "a": 50, "r": "Un crocodile mange ~50kg de viande par an (il peut rester 1 an sans manger)."},
-  {"q": "Combien de spaghettis faudrait-il pour faire un collier autour de la Terre ?", "a": 2500000000, "r": "Un spaghetti fait ~25cm, circonférence Terre ~40 000 km = 2,5 milliards."},
-  {"q": "Combien d'années de douche perds-tu à chercher du shampoing ?", "a": 2.5, "r": "~2,5 ans cumulés sur une vie à chercher des produits sous la douche."},
-  {"q": "Combien de bananes peut-on acheter avec le salaire d'un sénateur algérien en 1 heure ?", "a": 5200, "r": "Salaire sénateur ALG ~780 000 DZD/mois, banane ~150 DZD/kg = ~5200 bananes/heure."},
-  {"q": "Combien de litres de gazole faut-il pour faire le tour de l'Algérie en Yaris ?", "a": 220, "r": "~12 000 km de côtes + frontières, Yaris fait ~4L/100km = 480L. Mais on peut pas traverser le Sahara ou les frontières fermées, donc ~220L réalistes."},
-  {"q": "Combien de kilos de couscous consomme un Algérien moyen par an ?", "a": 12, "r": "Un Algérien mange ~12kg de couscous par an (chiffres officieux de la direction du blé)."},
-  {"q": "Combien de DZD coûte un café turc à Alger en 2026 ?", "a": 50, "r": "Prix moyen d'un café turc à Alger en 2026 : ~50 DZD."},
-  {"q": "Combien de meubles IKEA peut-on monter avant de divorcer ?", "a": 3, "r": "Statistiquement, le 3e meuble IKEA est la cause principale de dispute conjugale."},
-  {"q": "Combien de minutes faut-il pour regretter un achat en ligne ?", "a": 7, "r": "Le regret moyen arrive 7 minutes après l'achat (étude Amazon)."},
-  {"q": "Combien de fois par jour le mot 'inshallah' est-il prononcé en Algérie ?", "a": 50000000, "r": "Estimation basse : 50 millions de fois par jour (30 millions d'Algériens, ~1,7 fois par personne)."},
-  {"q": "Combien de mètres de câble USB sont perdus chaque année dans le monde ?", "a": 150000000, "r": "On estime à 150 000 km de câbles USB perdus ou oubliés par an."},
-  {"q": "Combien de kilos de dattes un Algérien mange pendant le Ramadhan ?", "a": 3, "r": "Moyenne de ~3kg de dattes par personne pendant le mois de Ramadhan."},
-  {"q": "Combien de tasses de thé à la menthe bois-tu en une semaine en Algérie ?", "a": 21, "r": "Moyenne nationale : 3 tasses par jour × 7 jours = 21 tasses par semaine."},
-  {"q": "Combien de moutons sont sacrifiés en Algérie pour l'Aïd ?", "a": 4000000, "r": "Environ 4 millions de moutons pour l'Aïd el-Adha en Algérie."},
-  {"q": "Combien de dinosaures auraient tenu dans l'Arche de Noé ?", "a": 0, "r": "0 dinosaure. L'Arche n'existait pas encore à l'époque. Et Noé n'avait pas de permis bateau pour dinosaures."},
-  {"q": "Combien de like aurait une photo de Felix (le chat mâle) en 2026 ?", "a": 15000, "r": "FeliX mâle reçoit ~15 000 likes par post Instagram."},
-  {"q": "Combien d'Algériens tapent 'hmdl' par jour ?", "a": 12000000, "r": "~12 millions d'Algériens tapent 'hamdoulah' ou 'hmdl' chaque jour."}
+  {
+    "q": {"fr": "Combien de pots de Nutella pour remplir une baignoire ?", "en": "How many Nutella jars to fill a bathtub?", "ar": "كم وعاء نوتيلا لملء حوض الاستحمام؟"},
+    "a": 280,
+    "r": {"fr": "Une baignoire fait ~140L, un pot de Nutella 500ml = 280 pots.", "en": "A bathtub is ~140L, a Nutella jar is 500ml = 280 jars.", "ar": "حوض الاستحمام ~140 لتر، وعاء نوتيلا 500 مل = 280 وعاء."}
+  },
+  {
+    "q": {"fr": "Combien de mètres de PQ utilise un humain moyen par an ?", "en": "How many meters of toilet paper does the average human use per year?", "ar": "كم متراً من ورق التواليت يستخدمه الإنسان العادي سنوياً؟"},
+    "a": 9500,
+    "r": {"fr": "Environ 9,5 km de papier toilette par an.", "en": "About 9.5 km of toilet paper per year.", "ar": "حوالي 9.5 كم من ورق التواليت سنوياً."}
+  },
+  {
+    "q": {"fr": "Combien de chips pour atteindre la Lune en les empilant ?", "en": "How many chips stacked to reach the Moon?", "ar": "كم رقاقة بطاطس مكدسة للوصول إلى القمر؟"},
+    "a": 750000000,
+    "r": {"fr": "Une chips fait ~0,5mm, Lune à 384 400 km = ~750 millions.", "en": "A chip is ~0.5mm, Moon is 384,400 km = ~750 million.", "ar": "رقاقة ~0.5 مم، القمر 384,400 كم = ~750 مليون."}
+  },
+  {
+    "q": {"fr": "Combien de SMS pourrait-on envoyer avec la mémoire d'un pigeon ?", "en": "How many SMS could you send with a pigeon's memory?", "ar": "كم رسالة يمكن إرسالها بذاكرة حمامة؟"},
+    "a": 37,
+    "r": {"fr": "Un pigeon stocke ~300 bits = ~37 caractères.", "en": "A pigeon stores ~300 bits = ~37 characters.", "ar": "حمامة تخزن ~300 بت = ~37 حرفاً."}
+  },
+  {
+    "q": {"fr": "Combien de litres de lait une vache donne-t-elle par jour ?", "en": "How many liters of milk does a cow produce per day?", "ar": "كم لتر حليب تنتج بقرة يومياً؟"},
+    "a": 28,
+    "r": {"fr": "Une vache laitière produit ~28 litres par jour.", "en": "A dairy cow produces ~28 liters per day.", "ar": "بقرة حلوب تنتج ~28 لتراً يومياً."}
+  },
+  {
+    "q": {"fr": "Combien de bulles pour emballer une personne dans du papier bulle ?", "en": "How many bubbles to wrap a person in bubble wrap?", "ar": "كم فقاعة لتغليف شخص بالنايلون الفقاعي؟"},
+    "a": 120000,
+    "r": {"fr": "Surface corporelle ~1,8m², chaque bulle ~1,5cm² = 120 000.", "en": "Body surface ~1.8m², each bubble ~1.5cm² = 120,000.", "ar": "مساحة الجسم ~1.8م²، كل فقاعة ~1.5سم² = 120,000."}
+  },
+  {
+    "q": {"fr": "Combien de grimaces un bébé fait-il par heure ?", "en": "How many faces does a baby make per hour?", "ar": "كم كشركة يصنعها الطفل في الساعة؟"},
+    "a": 12,
+    "r": {"fr": "Un bébé fait 10 à 15 grimaces par heure.", "en": "A baby makes 10 to 15 faces per hour.", "ar": "الطفل يصنع 10 إلى 15 كشركة في الساعة."}
+  },
+  {
+    "q": {"fr": "Combien de fois par an un humain cligne-t-il des yeux ?", "en": "How many times per year does a human blink?", "ar": "كم مرة في السنة يرمش الإنسان؟"},
+    "a": 4200000,
+    "r": {"fr": "~15 clignements/min × 60 × 24 × 365 = ~4,2 millions.", "en": "~15 blinks/min × 60 × 24 × 365 = ~4.2 million.", "ar": "~15 رمشة/دقيقة × 60 × 24 × 365 = ~4.2 مليون."}
+  },
+  {
+    "q": {"fr": "Combien de kilos de viande mange un crocodile par an ?", "en": "How many kilos of meat does a crocodile eat per year?", "ar": "كم كيلو لحم يأكل التمساح سنوياً؟"},
+    "a": 50,
+    "r": {"fr": "Un crocodile mange ~50kg de viande par an.", "en": "A crocodile eats ~50kg of meat per year.", "ar": "التمساح يأكل ~50 كجم لحم سنوياً."}
+  },
+  {
+    "q": {"fr": "Combien de spaghettis pour faire un collier autour de la Terre ?", "en": "How many spaghetti noodles to necklace the Earth?", "ar": "كم معكرونة لعقد حول الأرض؟"},
+    "a": 2500000000,
+    "r": {"fr": "Un spaghetti fait ~25cm, circonférence Terre ~40 000 km = 2,5 milliards.", "en": "One spaghetti is ~25cm, Earth circumference ~40,000 km = 2.5 billion.", "ar": "المعكرونة ~25 سم، محيط الأرض ~40,000 كم = 2.5 مليار."}
+  },
+  {
+    "q": {"fr": "Combien d'années passes-tu à chercher du shampoing sous la douche ?", "en": "How many years do you spend looking for shampoo in the shower?", "ar": "كم سنة تقضيها في البحث عن الشامبو تحت الدش؟"},
+    "a": 2.5,
+    "r": {"fr": "~2,5 ans cumulés sur une vie à chercher des produits.", "en": "~2.5 years cumulated over a lifetime looking for products.", "ar": "~2.5 سنة متراكمة على مدى الحياة في البحث عن المنتجات."}
+  },
+  {
+    "q": {"fr": "Combien de bananes avec le salaire d'un sénateur algérien en 1h ?", "en": "How many bananas with an Algerian senator's salary in 1h?", "ar": "كم موزة براتب سناتور جزائري في ساعة؟"},
+    "a": 5200,
+    "r": {"fr": "Salaire ~780 000 DZD/mois, banane ~150 DZD/kg = 5200 bananes/h.", "en": "Salary ~780,000 DZD/month, banana ~150 DZD/kg = 5200 bananas/h.", "ar": "راتب ~780,000 دج/شهر، موز ~150 دج/كجم = 5200 موزة/ساعة."}
+  },
+  {
+    "q": {"fr": "Combien de litres de gasoil pour le tour de l'Algérie en Yaris ?", "en": "How many liters of diesel to circle Algeria in a Yaris?", "ar": "كم لتر غازول للدوران حول الجزائر بسيارة يارس؟"},
+    "a": 220,
+    "r": {"fr": "~12 000 km, Yaris ~4L/100km = 480L mais frontières fermées = ~220L.", "en": "~12,000 km, Yaris ~4L/100km = 480L but closed borders = ~220L.", "ar": "~12,000 كم، يارس ~4L/100km = 480L لكن الحدود مغلقة = ~220L."}
+  },
+  {
+    "q": {"fr": "Combien de kilos de couscous mange un Algérien par an ?", "en": "How many kilos of couscous does an Algerian eat per year?", "ar": "كم كيلو كسكس يأكل الجزائري سنوياً؟"},
+    "a": 12,
+    "r": {"fr": "~12kg de couscous par an (chiffre officieux).", "en": "~12kg of couscous per year (unofficial figure).", "ar": "~12 كجم كسكس سنوياً (رقم غير رسمي)."}
+  },
+  {
+    "q": {"fr": "Combien coûte un café turc à Alger en 2026 (DZD) ?", "en": "How much is a Turkish coffee in Algiers in 2026 (DZD)?", "ar": "كم سعر قهوة تركية في الجزائر 2026 (دج)؟"},
+    "a": 50,
+    "r": {"fr": "Prix moyen d'un café turc à Alger : ~50 DZD.", "en": "Average price of a Turkish coffee in Algiers: ~50 DZD.", "ar": "متوسط سعر قهوة تركية في الجزائر: ~50 دج."}
+  },
+  {
+    "q": {"fr": "Combien de meubles IKEA avant de divorcer ?", "en": "How many IKEA furniture pieces before divorce?", "ar": "كم قطعة أثاث إيكيا قبل الطلاق؟"},
+    "a": 3,
+    "r": {"fr": "Le 3e meuble IKEA est la cause principale de dispute conjugale.", "en": "The 3rd IKEA furniture is the leading cause of marital dispute.", "ar": "قطعة إيكيا الثالثة هي السبب الرئيسي للخلاف الزوجي."}
+  },
+  {
+    "q": {"fr": "Combien de minutes avant de regretter un achat en ligne ?", "en": "How many minutes before regretting an online purchase?", "ar": "كم دقيقة قبل الندم على شراء عبر الإنترنت؟"},
+    "a": 7,
+    "r": {"fr": "Le regret arrive 7 minutes après l'achat (étude Amazon).", "en": "Regret arrives 7 minutes after purchase (Amazon study).", "ar": "الندم يصل بعد 7 دقائق من الشراء (دراسة أمازون)."}
+  },
+  {
+    "q": {"fr": "Combien de fois par jour dit-on 'inchallah' en Algérie ?", "en": "How many times per day is 'inshallah' said in Algeria?", "ar": "كم مرة في اليوم يقال 'إن شاء الله' في الجزائر؟"},
+    "a": 50000000,
+    "r": {"fr": "~50 millions de fois (30M d'Algériens, ~1,7 fois/personne).", "en": "~50 million times (30M Algerians, ~1.7 times/person).", "ar": "~50 مليون مرة (30M جزائري، ~1.7 مرة/شخص)."}
+  },
+  {
+    "q": {"fr": "Combien de mètres de câble USB sont perdus par an ?", "en": "How many meters of USB cable are lost per year?", "ar": "كم متراً من كابل USB يُفقد سنوياً؟"},
+    "a": 150000000,
+    "r": {"fr": "~150 000 km de câbles USB perdus ou oubliés par an.", "en": "~150,000 km of USB cables lost or forgotten per year.", "ar": "~150,000 كم من كابلات USB مفقودة أو منسية سنوياً."}
+  },
+  {
+    "q": {"fr": "Combien de kilos de dattes pendant le Ramadhan (par personne) ?", "en": "How many kilos of dates during Ramadan (per person)?", "ar": "كم كيلو تمر خلال رمضان (للشخص الواحد)؟"},
+    "a": 3,
+    "r": {"fr": "~3kg de dattes par personne pendant le Ramadhan.", "en": "~3kg of dates per person during Ramadan.", "ar": "~3 كجم تمر للشخص خلال رمضان."}
+  },
+  {
+    "q": {"fr": "Combien de tasses de thé à la menthe par semaine en Algérie ?", "en": "How many mint tea cups per week in Algeria?", "ar": "كم كوب شاي بالنعناع أسبوعياً في الجزائر؟"},
+    "a": 21,
+    "r": {"fr": "Moyenne nationale : 3 tasses/jour × 7 = 21 tasses/semaine.", "en": "National average: 3 cups/day × 7 = 21 cups/week.", "ar": "المعدل الوطني: 3 أكواب/يوم × 7 = 21 كوب/أسبوع."}
+  },
+  {
+    "q": {"fr": "Combien de moutons sacrifiés pour l'Aïd en Algérie ?", "en": "How many sheep sacrificed for Eid in Algeria?", "ar": "كم خروف يُضحّى به في العيد في الجزائر؟"},
+    "a": 4000000,
+    "r": {"fr": "~4 millions de moutons pour l'Aïd el-Adha.", "en": "~4 million sheep for Eid al-Adha.", "ar": "~4 ملايين خروف لعيد الأضحى."}
+  },
+  {
+    "q": {"fr": "Combien de dinosaures auraient tenu dans l'Arche de Noé ?", "en": "How many dinosaurs would fit in Noah's Ark?", "ar": "كم ديناصور كان سيسع في سفينة نوح؟"},
+    "a": 0,
+    "r": {"fr": "0 dinosaure. L'Arche n'existait pas et Noé n'avait pas de permis bateau.", "en": "0 dinosaurs. The Ark didn't exist and Noah had no boat license.", "ar": "0 ديناصور. سفينة نوح لم تكن موجودة ولم يكن لدى نوح رخصة قارب."}
+  },
+  {
+    "q": {"fr": "Combien de likes pour une photo du chat mâle Felix en 2026 ?", "en": "How many likes for male cat Felix's photo in 2026?", "ar": "كم إعجاباً لصورة القط فيليكس (ذكر) في 2026؟"},
+    "a": 15000,
+    "r": {"fr": "~15 000 likes par post Instagram.", "en": "~15,000 likes per Instagram post.", "ar": "~15,000 إعجاب لكل منشور إنستغرام."}
+  },
+  {
+    "q": {"fr": "Combien d'Algériens tapent 'hmdl' par jour ?", "en": "How many Algerians type 'hmdl' per day?", "ar": "كم جزائرياً يكتب 'الحمد لله' يومياً؟"},
+    "a": 12000000,
+    "r": {"fr": "~12 millions d'Algériens tapent 'hamdoulah' chaque jour.", "en": "~12 million Algerians type 'hamdoulah' every day.", "ar": "~12 مليون جزائري يكتب 'الحمد لله' كل يوم."}
+  }
 ]
